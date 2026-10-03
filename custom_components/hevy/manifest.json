@@ -1,0 +1,12 @@
+{
+  "domain": "hevy",
+  "name": "Hevy",
+  "codeowners": ["@lilfire"],
+  "config_flow": true,
+  "documentation": "https://github.com/lilfire/Ha-Hevy",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/lilfire/Ha-Hevy/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

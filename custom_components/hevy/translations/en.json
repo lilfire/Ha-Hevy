@@ -1,0 +1,781 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Hevy",
+        "description": "Enter your Hevy API key. It requires Hevy Pro and is created at [Hevy developer settings]({url}).",
+        "data": {
+          "api_key": "API key"
+        },
+        "data_description": {
+          "api_key": "Your personal Hevy API key."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Hevy",
+        "description": "The Hevy API key was rejected. Enter a new key from [Hevy developer settings]({url}).",
+        "data": {
+          "api_key": "API key"
+        },
+        "data_description": {
+          "api_key": "Your personal Hevy API key."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid API key.",
+      "cannot_connect": "Failed to connect to Hevy.",
+      "unknown": "Unexpected error."
+    },
+    "abort": {
+      "already_configured": "This Hevy account is already configured.",
+      "reauth_successful": "Re-authentication was successful.",
+      "wrong_account": "The API key belongs to a different Hevy account."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Hevy options",
+        "data": {
+          "scan_interval": "Update interval"
+        },
+        "data_description": {
+          "scan_interval": "How often to poll Hevy, in minutes."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "workout_count": {
+        "name": "Workouts"
+      },
+      "last_workout": {
+        "name": "Last workout"
+      },
+      "last_workout_title": {
+        "name": "Last workout title"
+      },
+      "last_workout_duration": {
+        "name": "Last workout duration"
+      },
+      "last_workout_volume": {
+        "name": "Last workout volume"
+      },
+      "last_workout_sets": {
+        "name": "Last workout sets"
+      },
+      "workouts_this_week": {
+        "name": "Workouts this week"
+      },
+      "volume_this_week": {
+        "name": "Volume this week"
+      },
+      "workouts_last_7_days": {
+        "name": "Workouts last 7 days"
+      },
+      "workouts_last_30_days": {
+        "name": "Workouts last 30 days"
+      },
+      "routines": {
+        "name": "Routines"
+      },
+      "routine_folders": {
+        "name": "Routine folders"
+      },
+      "body_measurement_date": {
+        "name": "Last body measurement"
+      },
+      "weight": {
+        "name": "Weight"
+      },
+      "lean_mass": {
+        "name": "Lean mass"
+      },
+      "fat_percent": {
+        "name": "Body fat"
+      },
+      "neck": {
+        "name": "Neck"
+      },
+      "shoulder": {
+        "name": "Shoulders"
+      },
+      "chest": {
+        "name": "Chest"
+      },
+      "left_bicep": {
+        "name": "Left bicep"
+      },
+      "right_bicep": {
+        "name": "Right bicep"
+      },
+      "left_forearm": {
+        "name": "Left forearm"
+      },
+      "right_forearm": {
+        "name": "Right forearm"
+      },
+      "abdomen": {
+        "name": "Abdomen"
+      },
+      "waist": {
+        "name": "Waist"
+      },
+      "hips": {
+        "name": "Hips"
+      },
+      "left_thigh": {
+        "name": "Left thigh"
+      },
+      "right_thigh": {
+        "name": "Right thigh"
+      },
+      "left_calf": {
+        "name": "Left calf"
+      },
+      "right_calf": {
+        "name": "Right calf"
+      }
+    }
+  },
+  "exceptions": {
+    "auth_failed": {
+      "message": "Hevy rejected the API key."
+    },
+    "rate_limited": {
+      "message": "Rate limited by Hevy. Try again later."
+    },
+    "update_failed": {
+      "message": "Error fetching data from Hevy: {error}"
+    },
+    "api_error": {
+      "message": "Hevy API error: {error}"
+    },
+    "not_found": {
+      "message": "Not found in Hevy: {error}"
+    },
+    "entry_not_found": {
+      "message": "Hevy config entry {entry_id} not found."
+    },
+    "entry_not_loaded": {
+      "message": "Hevy config entry {entry_id} is not loaded."
+    },
+    "entry_required": {
+      "message": "Several Hevy accounts are configured; select one."
+    },
+    "no_entries": {
+      "message": "No Hevy account is configured."
+    }
+  },
+  "selector": {
+    "exercise_type": {
+      "options": {
+        "weight_reps": "Weight & reps",
+        "reps_only": "Reps only",
+        "bodyweight_reps": "Bodyweight reps",
+        "bodyweight_assisted_reps": "Assisted bodyweight reps",
+        "duration": "Duration",
+        "weight_duration": "Weight & duration",
+        "distance_duration": "Distance & duration",
+        "short_distance_weight": "Short distance & weight"
+      }
+    },
+    "equipment_category": {
+      "options": {
+        "none": "None",
+        "barbell": "Barbell",
+        "dumbbell": "Dumbbell",
+        "kettlebell": "Kettlebell",
+        "machine": "Machine",
+        "plate": "Plate",
+        "resistance_band": "Resistance band",
+        "suspension": "Suspension",
+        "other": "Other"
+      }
+    },
+    "muscle_group": {
+      "options": {
+        "abdominals": "Abdominals",
+        "shoulders": "Shoulders",
+        "biceps": "Biceps",
+        "triceps": "Triceps",
+        "forearms": "Forearms",
+        "quadriceps": "Quadriceps",
+        "hamstrings": "Hamstrings",
+        "calves": "Calves",
+        "glutes": "Glutes",
+        "abductors": "Abductors",
+        "adductors": "Adductors",
+        "lats": "Lats",
+        "upper_back": "Upper back",
+        "traps": "Traps",
+        "lower_back": "Lower back",
+        "chest": "Chest",
+        "cardio": "Cardio",
+        "neck": "Neck",
+        "full_body": "Full body",
+        "other": "Other"
+      }
+    }
+  },
+  "services": {
+    "get_user_info": {
+      "name": "Get user info",
+      "description": "Get the Hevy user profile.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        }
+      }
+    },
+    "get_workouts": {
+      "name": "Get workouts",
+      "description": "Get a paginated list of workouts, newest first.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "page": {
+          "name": "Page",
+          "description": "Page number (1 or greater)."
+        },
+        "page_size": {
+          "name": "Page size",
+          "description": "Number of items per page (max 10)."
+        }
+      }
+    },
+    "get_workout": {
+      "name": "Get workout",
+      "description": "Get the complete details of a single workout.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "workout_id": {
+          "name": "Workout ID",
+          "description": "The ID of the workout."
+        }
+      }
+    },
+    "get_workout_count": {
+      "name": "Get workout count",
+      "description": "Get the total number of workouts on the account.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        }
+      }
+    },
+    "get_workout_events": {
+      "name": "Get workout events",
+      "description": "Get workouts updated or deleted since a given time, newest first.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "since": {
+          "name": "Since",
+          "description": "Return events after this time."
+        },
+        "page": {
+          "name": "Page",
+          "description": "Page number (1 or greater)."
+        },
+        "page_size": {
+          "name": "Page size",
+          "description": "Number of items per page (max 10)."
+        }
+      }
+    },
+    "create_workout": {
+      "name": "Create workout",
+      "description": "Log a new workout in Hevy.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Title."
+        },
+        "description": {
+          "name": "Description",
+          "description": "Workout description."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "When the workout started."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "When the workout ended."
+        },
+        "is_private": {
+          "name": "Private",
+          "description": "Hide the workout from other users."
+        },
+        "exercises": {
+          "name": "Exercises",
+          "description": "List of exercises. Each has exercise_template_id, optional superset_id and notes, and sets (type, weight_kg, reps, distance_meters, duration_seconds, rpe, custom_metric)."
+        }
+      }
+    },
+    "update_workout": {
+      "name": "Update workout",
+      "description": "Replace an existing workout.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "workout_id": {
+          "name": "Workout ID",
+          "description": "The ID of the workout."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Title."
+        },
+        "description": {
+          "name": "Description",
+          "description": "Workout description."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "When the workout started."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "When the workout ended."
+        },
+        "is_private": {
+          "name": "Private",
+          "description": "Hide the workout from other users."
+        },
+        "exercises": {
+          "name": "Exercises",
+          "description": "List of exercises. Each has exercise_template_id, optional superset_id and notes, and sets (type, weight_kg, reps, distance_meters, duration_seconds, rpe, custom_metric)."
+        }
+      }
+    },
+    "get_routines": {
+      "name": "Get routines",
+      "description": "Get a paginated list of routines.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "page": {
+          "name": "Page",
+          "description": "Page number (1 or greater)."
+        },
+        "page_size": {
+          "name": "Page size",
+          "description": "Number of items per page (max 10)."
+        }
+      }
+    },
+    "get_routine": {
+      "name": "Get routine",
+      "description": "Get a routine by ID.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "routine_id": {
+          "name": "Routine ID",
+          "description": "The ID of the routine."
+        }
+      }
+    },
+    "create_routine": {
+      "name": "Create routine",
+      "description": "Create a new routine.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Title."
+        },
+        "folder_id": {
+          "name": "Folder ID",
+          "description": "Routine folder to put the routine in."
+        },
+        "notes": {
+          "name": "Notes",
+          "description": "Routine notes."
+        },
+        "exercises": {
+          "name": "Exercises",
+          "description": "List of exercises. Each has exercise_template_id, optional superset_id, rest_seconds and notes, and sets (type, weight_kg, reps, rep_range, distance_meters, duration_seconds, custom_metric)."
+        }
+      }
+    },
+    "update_routine": {
+      "name": "Update routine",
+      "description": "Replace an existing routine.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "routine_id": {
+          "name": "Routine ID",
+          "description": "The ID of the routine."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Title."
+        },
+        "notes": {
+          "name": "Notes",
+          "description": "Routine notes."
+        },
+        "exercises": {
+          "name": "Exercises",
+          "description": "List of exercises. Each has exercise_template_id, optional superset_id, rest_seconds and notes, and sets (type, weight_kg, reps, rep_range, distance_meters, duration_seconds, custom_metric)."
+        }
+      }
+    },
+    "get_routine_folders": {
+      "name": "Get routine folders",
+      "description": "Get a paginated list of routine folders.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "page": {
+          "name": "Page",
+          "description": "Page number (1 or greater)."
+        },
+        "page_size": {
+          "name": "Page size",
+          "description": "Number of items per page (max 10)."
+        }
+      }
+    },
+    "get_routine_folder": {
+      "name": "Get routine folder",
+      "description": "Get a routine folder by ID.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "folder_id": {
+          "name": "Folder ID",
+          "description": "The ID of the routine folder."
+        }
+      }
+    },
+    "create_routine_folder": {
+      "name": "Create routine folder",
+      "description": "Create a new routine folder (placed first).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Title."
+        }
+      }
+    },
+    "get_exercise_templates": {
+      "name": "Get exercise templates",
+      "description": "Get a paginated list of exercise templates.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "page": {
+          "name": "Page",
+          "description": "Page number (1 or greater)."
+        },
+        "page_size": {
+          "name": "Page size",
+          "description": "Number of items per page (max 100)."
+        }
+      }
+    },
+    "get_exercise_template": {
+      "name": "Get exercise template",
+      "description": "Get a single exercise template by ID.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "exercise_template_id": {
+          "name": "Exercise template ID",
+          "description": "The ID of the exercise template."
+        }
+      }
+    },
+    "create_exercise_template": {
+      "name": "Create custom exercise",
+      "description": "Create a new custom exercise template.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Title."
+        },
+        "exercise_type": {
+          "name": "Exercise type",
+          "description": "How the exercise is logged."
+        },
+        "equipment_category": {
+          "name": "Equipment",
+          "description": "Equipment category."
+        },
+        "muscle_group": {
+          "name": "Primary muscle group",
+          "description": "Primary muscle group."
+        },
+        "other_muscles": {
+          "name": "Other muscles",
+          "description": "Secondary muscle groups."
+        }
+      }
+    },
+    "get_exercise_history": {
+      "name": "Get exercise history",
+      "description": "Get logged sets for an exercise template.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "exercise_template_id": {
+          "name": "Exercise template ID",
+          "description": "The ID of the exercise template."
+        },
+        "start_date": {
+          "name": "Start",
+          "description": "Only include history after this time."
+        },
+        "end_date": {
+          "name": "End",
+          "description": "Only include history before this time."
+        }
+      }
+    },
+    "get_body_measurements": {
+      "name": "Get body measurements",
+      "description": "Get a paginated list of body measurements.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "page": {
+          "name": "Page",
+          "description": "Page number (1 or greater)."
+        },
+        "page_size": {
+          "name": "Page size",
+          "description": "Number of items per page (max 10)."
+        }
+      }
+    },
+    "get_body_measurement": {
+      "name": "Get body measurement",
+      "description": "Get the body measurement for a date.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Date of the measurement."
+        }
+      }
+    },
+    "create_body_measurement": {
+      "name": "Create body measurement",
+      "description": "Create a body measurement for a date (fails if one exists).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Date of the measurement."
+        },
+        "weight_kg": {
+          "name": "Weight",
+          "description": "Weight (kg)."
+        },
+        "lean_mass_kg": {
+          "name": "Lean mass",
+          "description": "Lean mass (kg)."
+        },
+        "fat_percent": {
+          "name": "Body fat",
+          "description": "Body fat (%)."
+        },
+        "neck_cm": {
+          "name": "Neck",
+          "description": "Neck (cm)."
+        },
+        "shoulder_cm": {
+          "name": "Shoulders",
+          "description": "Shoulders (cm)."
+        },
+        "chest_cm": {
+          "name": "Chest",
+          "description": "Chest (cm)."
+        },
+        "left_bicep_cm": {
+          "name": "Left bicep",
+          "description": "Left bicep (cm)."
+        },
+        "right_bicep_cm": {
+          "name": "Right bicep",
+          "description": "Right bicep (cm)."
+        },
+        "left_forearm_cm": {
+          "name": "Left forearm",
+          "description": "Left forearm (cm)."
+        },
+        "right_forearm_cm": {
+          "name": "Right forearm",
+          "description": "Right forearm (cm)."
+        },
+        "abdomen": {
+          "name": "Abdomen",
+          "description": "Abdomen (cm)."
+        },
+        "waist": {
+          "name": "Waist",
+          "description": "Waist (cm)."
+        },
+        "hips": {
+          "name": "Hips",
+          "description": "Hips (cm)."
+        },
+        "left_thigh": {
+          "name": "Left thigh",
+          "description": "Left thigh (cm)."
+        },
+        "right_thigh": {
+          "name": "Right thigh",
+          "description": "Right thigh (cm)."
+        },
+        "left_calf": {
+          "name": "Left calf",
+          "description": "Left calf (cm)."
+        },
+        "right_calf": {
+          "name": "Right calf",
+          "description": "Right calf (cm)."
+        }
+      }
+    },
+    "update_body_measurement": {
+      "name": "Update body measurement",
+      "description": "Overwrite the body measurement for a date. Omitted fields are cleared.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "date": {
+          "name": "Date",
+          "description": "Date of the measurement."
+        },
+        "weight_kg": {
+          "name": "Weight",
+          "description": "Weight (kg)."
+        },
+        "lean_mass_kg": {
+          "name": "Lean mass",
+          "description": "Lean mass (kg)."
+        },
+        "fat_percent": {
+          "name": "Body fat",
+          "description": "Body fat (%)."
+        },
+        "neck_cm": {
+          "name": "Neck",
+          "description": "Neck (cm)."
+        },
+        "shoulder_cm": {
+          "name": "Shoulders",
+          "description": "Shoulders (cm)."
+        },
+        "chest_cm": {
+          "name": "Chest",
+          "description": "Chest (cm)."
+        },
+        "left_bicep_cm": {
+          "name": "Left bicep",
+          "description": "Left bicep (cm)."
+        },
+        "right_bicep_cm": {
+          "name": "Right bicep",
+          "description": "Right bicep (cm)."
+        },
+        "left_forearm_cm": {
+          "name": "Left forearm",
+          "description": "Left forearm (cm)."
+        },
+        "right_forearm_cm": {
+          "name": "Right forearm",
+          "description": "Right forearm (cm)."
+        },
+        "abdomen": {
+          "name": "Abdomen",
+          "description": "Abdomen (cm)."
+        },
+        "waist": {
+          "name": "Waist",
+          "description": "Waist (cm)."
+        },
+        "hips": {
+          "name": "Hips",
+          "description": "Hips (cm)."
+        },
+        "left_thigh": {
+          "name": "Left thigh",
+          "description": "Left thigh (cm)."
+        },
+        "right_thigh": {
+          "name": "Right thigh",
+          "description": "Right thigh (cm)."
+        },
+        "left_calf": {
+          "name": "Left calf",
+          "description": "Left calf (cm)."
+        },
+        "right_calf": {
+          "name": "Right calf",
+          "description": "Right calf (cm)."
+        }
+      }
+    }
+  }
+}

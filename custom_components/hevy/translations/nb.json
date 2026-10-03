@@ -1,0 +1,781 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Koble til Hevy",
+        "description": "Skriv inn Hevy API-nøkkelen din. Den krever Hevy Pro og opprettes i [Hevy utviklerinnstillinger]({url}).",
+        "data": {
+          "api_key": "API-nøkkel"
+        },
+        "data_description": {
+          "api_key": "Din personlige Hevy API-nøkkel."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Autentiser Hevy på nytt",
+        "description": "Hevy avviste API-nøkkelen. Skriv inn en ny nøkkel fra [Hevy utviklerinnstillinger]({url}).",
+        "data": {
+          "api_key": "API-nøkkel"
+        },
+        "data_description": {
+          "api_key": "Din personlige Hevy API-nøkkel."
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Ugyldig API-nøkkel.",
+      "cannot_connect": "Kunne ikke koble til Hevy.",
+      "unknown": "Uventet feil."
+    },
+    "abort": {
+      "already_configured": "Denne Hevy-kontoen er allerede satt opp.",
+      "reauth_successful": "Ny autentisering var vellykket.",
+      "wrong_account": "API-nøkkelen tilhører en annen Hevy-konto."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Hevy-innstillinger",
+        "data": {
+          "scan_interval": "Oppdateringsintervall"
+        },
+        "data_description": {
+          "scan_interval": "Hvor ofte Hevy skal spørres, i minutter."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "workout_count": {
+        "name": "Økter"
+      },
+      "last_workout": {
+        "name": "Siste økt"
+      },
+      "last_workout_title": {
+        "name": "Siste økt tittel"
+      },
+      "last_workout_duration": {
+        "name": "Siste økt varighet"
+      },
+      "last_workout_volume": {
+        "name": "Siste økt volum"
+      },
+      "last_workout_sets": {
+        "name": "Siste økt sett"
+      },
+      "workouts_this_week": {
+        "name": "Økter denne uken"
+      },
+      "volume_this_week": {
+        "name": "Volum denne uken"
+      },
+      "workouts_last_7_days": {
+        "name": "Økter siste 7 dager"
+      },
+      "workouts_last_30_days": {
+        "name": "Økter siste 30 dager"
+      },
+      "routines": {
+        "name": "Rutiner"
+      },
+      "routine_folders": {
+        "name": "Rutinemapper"
+      },
+      "body_measurement_date": {
+        "name": "Siste kroppsmåling"
+      },
+      "weight": {
+        "name": "Vekt"
+      },
+      "lean_mass": {
+        "name": "Fettfri masse"
+      },
+      "fat_percent": {
+        "name": "Kroppsfett"
+      },
+      "neck": {
+        "name": "Nakke"
+      },
+      "shoulder": {
+        "name": "Skuldre"
+      },
+      "chest": {
+        "name": "Bryst"
+      },
+      "left_bicep": {
+        "name": "Venstre biceps"
+      },
+      "right_bicep": {
+        "name": "Høyre biceps"
+      },
+      "left_forearm": {
+        "name": "Venstre underarm"
+      },
+      "right_forearm": {
+        "name": "Høyre underarm"
+      },
+      "abdomen": {
+        "name": "Mage"
+      },
+      "waist": {
+        "name": "Midje"
+      },
+      "hips": {
+        "name": "Hofter"
+      },
+      "left_thigh": {
+        "name": "Venstre lår"
+      },
+      "right_thigh": {
+        "name": "Høyre lår"
+      },
+      "left_calf": {
+        "name": "Venstre legg"
+      },
+      "right_calf": {
+        "name": "Høyre legg"
+      }
+    }
+  },
+  "exceptions": {
+    "auth_failed": {
+      "message": "Hevy avviste API-nøkkelen."
+    },
+    "rate_limited": {
+      "message": "Hevy begrenser antall forespørsler. Prøv igjen senere."
+    },
+    "update_failed": {
+      "message": "Feil ved henting av data fra Hevy: {error}"
+    },
+    "api_error": {
+      "message": "Feil fra Hevy-API: {error}"
+    },
+    "not_found": {
+      "message": "Ikke funnet i Hevy: {error}"
+    },
+    "entry_not_found": {
+      "message": "Fant ikke Hevy-oppføringen {entry_id}."
+    },
+    "entry_not_loaded": {
+      "message": "Hevy-oppføringen {entry_id} er ikke lastet."
+    },
+    "entry_required": {
+      "message": "Flere Hevy-kontoer er satt opp; velg én."
+    },
+    "no_entries": {
+      "message": "Ingen Hevy-konto er satt opp."
+    }
+  },
+  "selector": {
+    "exercise_type": {
+      "options": {
+        "weight_reps": "Vekt og repetisjoner",
+        "reps_only": "Kun repetisjoner",
+        "bodyweight_reps": "Kroppsvekt-repetisjoner",
+        "bodyweight_assisted_reps": "Assisterte kroppsvekt-repetisjoner",
+        "duration": "Varighet",
+        "weight_duration": "Vekt og varighet",
+        "distance_duration": "Distanse og varighet",
+        "short_distance_weight": "Kort distanse og vekt"
+      }
+    },
+    "equipment_category": {
+      "options": {
+        "none": "Ingen",
+        "barbell": "Vektstang",
+        "dumbbell": "Manual",
+        "kettlebell": "Kettlebell",
+        "machine": "Maskin",
+        "plate": "Vektskive",
+        "resistance_band": "Strikk",
+        "suspension": "Slynge",
+        "other": "Annet"
+      }
+    },
+    "muscle_group": {
+      "options": {
+        "abdominals": "Mage",
+        "shoulders": "Skuldre",
+        "biceps": "Biceps",
+        "triceps": "Triceps",
+        "forearms": "Underarmer",
+        "quadriceps": "Forside lår",
+        "hamstrings": "Bakside lår",
+        "calves": "Legger",
+        "glutes": "Sete",
+        "abductors": "Abduktorer",
+        "adductors": "Adduktorer",
+        "lats": "Latissimus",
+        "upper_back": "Øvre rygg",
+        "traps": "Trapezius",
+        "lower_back": "Korsrygg",
+        "chest": "Bryst",
+        "cardio": "Kondisjon",
+        "neck": "Nakke",
+        "full_body": "Hele kroppen",
+        "other": "Annet"
+      }
+    }
+  },
+  "services": {
+    "get_user_info": {
+      "name": "Hent brukerinfo",
+      "description": "Hent Hevy-brukerprofilen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        }
+      }
+    },
+    "get_workouts": {
+      "name": "Hent økter",
+      "description": "Hent en sidevis liste over treningsøkter, nyeste først.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "page": {
+          "name": "Side",
+          "description": "Sidenummer (1 eller høyere)."
+        },
+        "page_size": {
+          "name": "Sidestørrelse",
+          "description": "Antall elementer per side (maks 10)."
+        }
+      }
+    },
+    "get_workout": {
+      "name": "Hent økt",
+      "description": "Hent alle detaljer for én treningsøkt.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "workout_id": {
+          "name": "Økt-ID",
+          "description": "ID-en til treningsøkten."
+        }
+      }
+    },
+    "get_workout_count": {
+      "name": "Hent antall økter",
+      "description": "Hent totalt antall treningsøkter på kontoen.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        }
+      }
+    },
+    "get_workout_events": {
+      "name": "Hent økthendelser",
+      "description": "Hent økter som er endret eller slettet siden et gitt tidspunkt.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "since": {
+          "name": "Siden",
+          "description": "Returner hendelser etter dette tidspunktet."
+        },
+        "page": {
+          "name": "Side",
+          "description": "Sidenummer (1 eller høyere)."
+        },
+        "page_size": {
+          "name": "Sidestørrelse",
+          "description": "Antall elementer per side (maks 10)."
+        }
+      }
+    },
+    "create_workout": {
+      "name": "Opprett økt",
+      "description": "Logg en ny treningsøkt i Hevy.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "title": {
+          "name": "Tittel",
+          "description": "Tittel."
+        },
+        "description": {
+          "name": "Beskrivelse",
+          "description": "Beskrivelse av økten."
+        },
+        "start_time": {
+          "name": "Starttid",
+          "description": "Når økten startet."
+        },
+        "end_time": {
+          "name": "Sluttid",
+          "description": "Når økten sluttet."
+        },
+        "is_private": {
+          "name": "Privat",
+          "description": "Skjul økten for andre brukere."
+        },
+        "exercises": {
+          "name": "Øvelser",
+          "description": "Liste med øvelser. Hver har exercise_template_id, valgfri superset_id og notes, og sets (type, weight_kg, reps, distance_meters, duration_seconds, rpe, custom_metric)."
+        }
+      }
+    },
+    "update_workout": {
+      "name": "Oppdater økt",
+      "description": "Erstatt en eksisterende treningsøkt.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "workout_id": {
+          "name": "Økt-ID",
+          "description": "ID-en til treningsøkten."
+        },
+        "title": {
+          "name": "Tittel",
+          "description": "Tittel."
+        },
+        "description": {
+          "name": "Beskrivelse",
+          "description": "Beskrivelse av økten."
+        },
+        "start_time": {
+          "name": "Starttid",
+          "description": "Når økten startet."
+        },
+        "end_time": {
+          "name": "Sluttid",
+          "description": "Når økten sluttet."
+        },
+        "is_private": {
+          "name": "Privat",
+          "description": "Skjul økten for andre brukere."
+        },
+        "exercises": {
+          "name": "Øvelser",
+          "description": "Liste med øvelser. Hver har exercise_template_id, valgfri superset_id og notes, og sets (type, weight_kg, reps, distance_meters, duration_seconds, rpe, custom_metric)."
+        }
+      }
+    },
+    "get_routines": {
+      "name": "Hent rutiner",
+      "description": "Hent en sidevis liste over rutiner.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "page": {
+          "name": "Side",
+          "description": "Sidenummer (1 eller høyere)."
+        },
+        "page_size": {
+          "name": "Sidestørrelse",
+          "description": "Antall elementer per side (maks 10)."
+        }
+      }
+    },
+    "get_routine": {
+      "name": "Hent rutine",
+      "description": "Hent en rutine etter ID.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "routine_id": {
+          "name": "Rutine-ID",
+          "description": "ID-en til rutinen."
+        }
+      }
+    },
+    "create_routine": {
+      "name": "Opprett rutine",
+      "description": "Opprett en ny rutine.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "title": {
+          "name": "Tittel",
+          "description": "Tittel."
+        },
+        "folder_id": {
+          "name": "Mappe-ID",
+          "description": "Rutinemappen rutinen skal legges i."
+        },
+        "notes": {
+          "name": "Notater",
+          "description": "Notater for rutinen."
+        },
+        "exercises": {
+          "name": "Øvelser",
+          "description": "Liste med øvelser. Hver har exercise_template_id, valgfri superset_id, rest_seconds og notes, og sets (type, weight_kg, reps, rep_range, distance_meters, duration_seconds, custom_metric)."
+        }
+      }
+    },
+    "update_routine": {
+      "name": "Oppdater rutine",
+      "description": "Erstatt en eksisterende rutine.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "routine_id": {
+          "name": "Rutine-ID",
+          "description": "ID-en til rutinen."
+        },
+        "title": {
+          "name": "Tittel",
+          "description": "Tittel."
+        },
+        "notes": {
+          "name": "Notater",
+          "description": "Notater for rutinen."
+        },
+        "exercises": {
+          "name": "Øvelser",
+          "description": "Liste med øvelser. Hver har exercise_template_id, valgfri superset_id, rest_seconds og notes, og sets (type, weight_kg, reps, rep_range, distance_meters, duration_seconds, custom_metric)."
+        }
+      }
+    },
+    "get_routine_folders": {
+      "name": "Hent rutinemapper",
+      "description": "Hent en sidevis liste over rutinemapper.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "page": {
+          "name": "Side",
+          "description": "Sidenummer (1 eller høyere)."
+        },
+        "page_size": {
+          "name": "Sidestørrelse",
+          "description": "Antall elementer per side (maks 10)."
+        }
+      }
+    },
+    "get_routine_folder": {
+      "name": "Hent rutinemappe",
+      "description": "Hent en rutinemappe etter ID.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "folder_id": {
+          "name": "Mappe-ID",
+          "description": "ID-en til rutinemappen."
+        }
+      }
+    },
+    "create_routine_folder": {
+      "name": "Opprett rutinemappe",
+      "description": "Opprett en ny rutinemappe (plasseres først).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "title": {
+          "name": "Tittel",
+          "description": "Tittel."
+        }
+      }
+    },
+    "get_exercise_templates": {
+      "name": "Hent øvelsesmaler",
+      "description": "Hent en sidevis liste over øvelsesmaler.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "page": {
+          "name": "Side",
+          "description": "Sidenummer (1 eller høyere)."
+        },
+        "page_size": {
+          "name": "Sidestørrelse",
+          "description": "Antall elementer per side (maks 100)."
+        }
+      }
+    },
+    "get_exercise_template": {
+      "name": "Hent øvelsesmal",
+      "description": "Hent én øvelsesmal etter ID.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "exercise_template_id": {
+          "name": "Øvelsesmal-ID",
+          "description": "ID-en til øvelsesmalen."
+        }
+      }
+    },
+    "create_exercise_template": {
+      "name": "Opprett egen øvelse",
+      "description": "Opprett en ny egendefinert øvelsesmal.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "title": {
+          "name": "Tittel",
+          "description": "Tittel."
+        },
+        "exercise_type": {
+          "name": "Øvelsestype",
+          "description": "Hvordan øvelsen logges."
+        },
+        "equipment_category": {
+          "name": "Utstyr",
+          "description": "Utstyrskategori."
+        },
+        "muscle_group": {
+          "name": "Primær muskelgruppe",
+          "description": "Primær muskelgruppe."
+        },
+        "other_muscles": {
+          "name": "Andre muskler",
+          "description": "Sekundære muskelgrupper."
+        }
+      }
+    },
+    "get_exercise_history": {
+      "name": "Hent øvelseshistorikk",
+      "description": "Hent loggede sett for en øvelsesmal.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "exercise_template_id": {
+          "name": "Øvelsesmal-ID",
+          "description": "ID-en til øvelsesmalen."
+        },
+        "start_date": {
+          "name": "Start",
+          "description": "Ta bare med historikk etter dette tidspunktet."
+        },
+        "end_date": {
+          "name": "Slutt",
+          "description": "Ta bare med historikk før dette tidspunktet."
+        }
+      }
+    },
+    "get_body_measurements": {
+      "name": "Hent kroppsmål",
+      "description": "Hent en sidevis liste over kroppsmål.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "page": {
+          "name": "Side",
+          "description": "Sidenummer (1 eller høyere)."
+        },
+        "page_size": {
+          "name": "Sidestørrelse",
+          "description": "Antall elementer per side (maks 10)."
+        }
+      }
+    },
+    "get_body_measurement": {
+      "name": "Hent kroppsmål for dato",
+      "description": "Hent kroppsmålet for en dato.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "date": {
+          "name": "Dato",
+          "description": "Dato for målingen."
+        }
+      }
+    },
+    "create_body_measurement": {
+      "name": "Opprett kroppsmål",
+      "description": "Opprett et kroppsmål for en dato (feiler hvis det finnes fra før).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "date": {
+          "name": "Dato",
+          "description": "Dato for målingen."
+        },
+        "weight_kg": {
+          "name": "Vekt",
+          "description": "Vekt (kg)."
+        },
+        "lean_mass_kg": {
+          "name": "Fettfri masse",
+          "description": "Fettfri masse (kg)."
+        },
+        "fat_percent": {
+          "name": "Kroppsfett",
+          "description": "Kroppsfett (%)."
+        },
+        "neck_cm": {
+          "name": "Nakke",
+          "description": "Nakke (cm)."
+        },
+        "shoulder_cm": {
+          "name": "Skuldre",
+          "description": "Skuldre (cm)."
+        },
+        "chest_cm": {
+          "name": "Bryst",
+          "description": "Bryst (cm)."
+        },
+        "left_bicep_cm": {
+          "name": "Venstre biceps",
+          "description": "Venstre biceps (cm)."
+        },
+        "right_bicep_cm": {
+          "name": "Høyre biceps",
+          "description": "Høyre biceps (cm)."
+        },
+        "left_forearm_cm": {
+          "name": "Venstre underarm",
+          "description": "Venstre underarm (cm)."
+        },
+        "right_forearm_cm": {
+          "name": "Høyre underarm",
+          "description": "Høyre underarm (cm)."
+        },
+        "abdomen": {
+          "name": "Mage",
+          "description": "Mage (cm)."
+        },
+        "waist": {
+          "name": "Midje",
+          "description": "Midje (cm)."
+        },
+        "hips": {
+          "name": "Hofter",
+          "description": "Hofter (cm)."
+        },
+        "left_thigh": {
+          "name": "Venstre lår",
+          "description": "Venstre lår (cm)."
+        },
+        "right_thigh": {
+          "name": "Høyre lår",
+          "description": "Høyre lår (cm)."
+        },
+        "left_calf": {
+          "name": "Venstre legg",
+          "description": "Venstre legg (cm)."
+        },
+        "right_calf": {
+          "name": "Høyre legg",
+          "description": "Høyre legg (cm)."
+        }
+      }
+    },
+    "update_body_measurement": {
+      "name": "Oppdater kroppsmål",
+      "description": "Overskriv kroppsmålet for en dato. Felt som utelates blir tømt.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "date": {
+          "name": "Dato",
+          "description": "Dato for målingen."
+        },
+        "weight_kg": {
+          "name": "Vekt",
+          "description": "Vekt (kg)."
+        },
+        "lean_mass_kg": {
+          "name": "Fettfri masse",
+          "description": "Fettfri masse (kg)."
+        },
+        "fat_percent": {
+          "name": "Kroppsfett",
+          "description": "Kroppsfett (%)."
+        },
+        "neck_cm": {
+          "name": "Nakke",
+          "description": "Nakke (cm)."
+        },
+        "shoulder_cm": {
+          "name": "Skuldre",
+          "description": "Skuldre (cm)."
+        },
+        "chest_cm": {
+          "name": "Bryst",
+          "description": "Bryst (cm)."
+        },
+        "left_bicep_cm": {
+          "name": "Venstre biceps",
+          "description": "Venstre biceps (cm)."
+        },
+        "right_bicep_cm": {
+          "name": "Høyre biceps",
+          "description": "Høyre biceps (cm)."
+        },
+        "left_forearm_cm": {
+          "name": "Venstre underarm",
+          "description": "Venstre underarm (cm)."
+        },
+        "right_forearm_cm": {
+          "name": "Høyre underarm",
+          "description": "Høyre underarm (cm)."
+        },
+        "abdomen": {
+          "name": "Mage",
+          "description": "Mage (cm)."
+        },
+        "waist": {
+          "name": "Midje",
+          "description": "Midje (cm)."
+        },
+        "hips": {
+          "name": "Hofter",
+          "description": "Hofter (cm)."
+        },
+        "left_thigh": {
+          "name": "Venstre lår",
+          "description": "Venstre lår (cm)."
+        },
+        "right_thigh": {
+          "name": "Høyre lår",
+          "description": "Høyre lår (cm)."
+        },
+        "left_calf": {
+          "name": "Venstre legg",
+          "description": "Venstre legg (cm)."
+        },
+        "right_calf": {
+          "name": "Høyre legg",
+          "description": "Høyre legg (cm)."
+        }
+      }
+    }
+  }
+}

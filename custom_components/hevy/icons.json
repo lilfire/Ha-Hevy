@@ -1,0 +1,164 @@
+{
+  "entity": {
+    "sensor": {
+      "workout_count": {
+        "default": "mdi:counter"
+      },
+      "last_workout_title": {
+        "default": "mdi:format-title"
+      },
+      "last_workout_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "last_workout_volume": {
+        "default": "mdi:weight"
+      },
+      "last_workout_sets": {
+        "default": "mdi:format-list-numbered"
+      },
+      "workouts_this_week": {
+        "default": "mdi:calendar-week"
+      },
+      "volume_this_week": {
+        "default": "mdi:weight"
+      },
+      "workouts_last_7_days": {
+        "default": "mdi:calendar-range"
+      },
+      "workouts_last_30_days": {
+        "default": "mdi:calendar-month"
+      },
+      "routines": {
+        "default": "mdi:clipboard-list"
+      },
+      "routine_folders": {
+        "default": "mdi:folder-multiple"
+      },
+      "body_measurement_date": {
+        "default": "mdi:calendar-check"
+      },
+      "weight": {
+        "default": "mdi:scale-bathroom"
+      },
+      "lean_mass": {
+        "default": "mdi:arm-flex"
+      },
+      "fat_percent": {
+        "default": "mdi:percent"
+      },
+      "neck": {
+        "default": "mdi:tape-measure"
+      },
+      "shoulder": {
+        "default": "mdi:tape-measure"
+      },
+      "chest": {
+        "default": "mdi:tape-measure"
+      },
+      "left_bicep": {
+        "default": "mdi:tape-measure"
+      },
+      "right_bicep": {
+        "default": "mdi:tape-measure"
+      },
+      "left_forearm": {
+        "default": "mdi:tape-measure"
+      },
+      "right_forearm": {
+        "default": "mdi:tape-measure"
+      },
+      "abdomen": {
+        "default": "mdi:tape-measure"
+      },
+      "waist": {
+        "default": "mdi:tape-measure"
+      },
+      "hips": {
+        "default": "mdi:tape-measure"
+      },
+      "left_thigh": {
+        "default": "mdi:tape-measure"
+      },
+      "right_thigh": {
+        "default": "mdi:tape-measure"
+      },
+      "left_calf": {
+        "default": "mdi:tape-measure"
+      },
+      "right_calf": {
+        "default": "mdi:tape-measure"
+      },
+      "last_workout": {
+        "default": "mdi:dumbbell"
+      }
+    }
+  },
+  "services": {
+    "get_user_info": {
+      "service": "mdi:account"
+    },
+    "get_workouts": {
+      "service": "mdi:dumbbell"
+    },
+    "get_workout": {
+      "service": "mdi:dumbbell"
+    },
+    "get_workout_count": {
+      "service": "mdi:counter"
+    },
+    "get_workout_events": {
+      "service": "mdi:history"
+    },
+    "create_workout": {
+      "service": "mdi:plus-circle"
+    },
+    "update_workout": {
+      "service": "mdi:pencil"
+    },
+    "get_routines": {
+      "service": "mdi:clipboard-list"
+    },
+    "get_routine": {
+      "service": "mdi:clipboard-list"
+    },
+    "create_routine": {
+      "service": "mdi:clipboard-plus"
+    },
+    "update_routine": {
+      "service": "mdi:clipboard-edit"
+    },
+    "get_routine_folders": {
+      "service": "mdi:folder-multiple"
+    },
+    "get_routine_folder": {
+      "service": "mdi:folder"
+    },
+    "create_routine_folder": {
+      "service": "mdi:folder-plus"
+    },
+    "get_exercise_templates": {
+      "service": "mdi:weight-lifter"
+    },
+    "get_exercise_template": {
+      "service": "mdi:weight-lifter"
+    },
+    "create_exercise_template": {
+      "service": "mdi:plus-box"
+    },
+    "get_exercise_history": {
+      "service": "mdi:chart-line"
+    },
+    "get_body_measurements": {
+      "service": "mdi:human"
+    },
+    "get_body_measurement": {
+      "service": "mdi:human"
+    },
+    "create_body_measurement": {
+      "service": "mdi:human-male-height"
+    },
+    "update_body_measurement": {
+      "service": "mdi:human-male-height"
+    }
+  }
+}
