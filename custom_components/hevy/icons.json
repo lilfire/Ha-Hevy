@@ -88,6 +88,75 @@
       "right_calf": {
         "default": "mdi:tape-measure"
       },
+      "exercise_max_weight": {
+        "default": "mdi:weight-kilogram"
+      },
+      "exercise_estimated_1rm": {
+        "default": "mdi:trophy"
+      },
+      "exercise_best_set": {
+        "default": "mdi:star"
+      },
+      "exercise_last_volume": {
+        "default": "mdi:weight"
+      },
+      "exercise_last_performed": {
+        "default": "mdi:calendar-clock"
+      },
+      "exercise_max_reps": {
+        "default": "mdi:repeat"
+      },
+      "exercise_workout_count": {
+        "default": "mdi:counter"
+      },
+      "exercise_total_sets": {
+        "default": "mdi:format-list-numbered"
+      },
+      "exercise_total_reps": {
+        "default": "mdi:repeat"
+      },
+      "exercise_total_volume": {
+        "default": "mdi:weight"
+      },
+      "exercise_last_sets": {
+        "default": "mdi:format-list-numbered"
+      },
+      "exercise_last_reps": {
+        "default": "mdi:repeat"
+      },
+      "exercise_last_top_weight": {
+        "default": "mdi:weight-kilogram"
+      },
+      "exercise_max_distance": {
+        "default": "mdi:map-marker-distance"
+      },
+      "exercise_total_distance": {
+        "default": "mdi:map-marker-distance"
+      },
+      "exercise_max_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "exercise_total_duration": {
+        "default": "mdi:timer-sand"
+      },
+      "routine_last_volume": {
+        "default": "mdi:weight"
+      },
+      "routine_previous_volume": {
+        "default": "mdi:weight"
+      },
+      "routine_volume_change": {
+        "default": "mdi:trending-up"
+      },
+      "routine_last_performed": {
+        "default": "mdi:calendar-clock"
+      },
+      "routine_workout_count": {
+        "default": "mdi:counter"
+      },
+      "routine_last_duration": {
+        "default": "mdi:timer-outline"
+      },
       "last_workout": {
         "default": "mdi:dumbbell"
       }

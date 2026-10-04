@@ -137,6 +137,75 @@
       },
       "right_calf": {
         "name": "Høyre legg"
+      },
+      "exercise_max_weight": {
+        "name": "Maks vekt"
+      },
+      "exercise_estimated_1rm": {
+        "name": "Estimert 1RM"
+      },
+      "exercise_best_set": {
+        "name": "Beste sett"
+      },
+      "exercise_last_volume": {
+        "name": "Siste volum"
+      },
+      "exercise_last_performed": {
+        "name": "Sist utført"
+      },
+      "exercise_max_reps": {
+        "name": "Maks repetisjoner"
+      },
+      "exercise_workout_count": {
+        "name": "Økter"
+      },
+      "exercise_total_sets": {
+        "name": "Totalt antall sett"
+      },
+      "exercise_total_reps": {
+        "name": "Totalt antall repetisjoner"
+      },
+      "exercise_total_volume": {
+        "name": "Totalt volum"
+      },
+      "exercise_last_sets": {
+        "name": "Sett siste økt"
+      },
+      "exercise_last_reps": {
+        "name": "Repetisjoner siste økt"
+      },
+      "exercise_last_top_weight": {
+        "name": "Tyngste vekt siste økt"
+      },
+      "exercise_max_distance": {
+        "name": "Lengste distanse"
+      },
+      "exercise_total_distance": {
+        "name": "Total distanse"
+      },
+      "exercise_max_duration": {
+        "name": "Lengste varighet"
+      },
+      "exercise_total_duration": {
+        "name": "Total varighet"
+      },
+      "routine_last_volume": {
+        "name": "Siste volum"
+      },
+      "routine_previous_volume": {
+        "name": "Forrige volum"
+      },
+      "routine_volume_change": {
+        "name": "Volumendring"
+      },
+      "routine_last_performed": {
+        "name": "Sist utført"
+      },
+      "routine_workout_count": {
+        "name": "Økter"
+      },
+      "routine_last_duration": {
+        "name": "Varighet siste økt"
       }
     }
   },

@@ -8,7 +8,7 @@ import re
 
 import yaml
 
-from custom_components.hevy.sensor import SENSORS
+from custom_components.hevy.sensor import EXERCISE_SENSORS, ROUTINE_SENSORS, SENSORS
 from custom_components.hevy.services import ATTR_CONFIG_ENTRY_ID, SERVICES
 
 ROOT = Path(__file__).parent.parent / "custom_components" / "hevy"
@@ -33,7 +33,7 @@ def test_services_match_schema() -> None:
 
 def test_sensor_translations() -> None:
     """Every sensor has a name and icon."""
-    keys = {d.translation_key for d in SENSORS}
+    keys = {d.translation_key for d in (*SENSORS, *EXERCISE_SENSORS, *ROUTINE_SENSORS)}
     assert keys == set(load("strings.json")["entity"]["sensor"])
     assert keys == set(load("icons.json")["entity"]["sensor"])
 
@@ -44,7 +44,7 @@ def test_exception_keys() -> None:
     used: set[str] = set()
     for path in ROOT.glob("*.py"):
         used |= set(re.findall(r'translation_key="([a-z_]+)"', path.read_text()))
-    used -= {d.translation_key for d in SENSORS}
+    used -= {d.translation_key for d in (*SENSORS, *EXERCISE_SENSORS, *ROUTINE_SENSORS)}
     assert used <= exceptions, used - exceptions
 
 

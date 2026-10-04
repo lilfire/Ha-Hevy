@@ -77,6 +77,23 @@ def mock_api(aioclient_mock: AiohttpClientMocker) -> AiohttpClientMocker:
     )
     aioclient_mock.get(f"{BASE}/workouts/count", json={"workout_count": 42})
     aioclient_mock.get(
+        f"{BASE}/exercise_templates",
+        json={
+            "page": 1,
+            "page_count": 1,
+            "exercise_templates": [
+                {
+                    "id": "D04AC939",
+                    "title": "Bench Press (Barbell)",
+                    "type": "weight_reps",
+                    "primary_muscle_group": "chest",
+                    "secondary_muscle_groups": ["triceps"],
+                    "is_custom": False,
+                }
+            ],
+        },
+    )
+    aioclient_mock.get(
         f"{BASE}/workouts",
         json={
             "page": 1,

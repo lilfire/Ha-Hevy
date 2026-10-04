@@ -520,9 +520,60 @@ SENSORS = {
     "lean_mass": ("Lean mass", "Fettfri masse", "mdi:arm-flex"),
     "fat_percent": ("Body fat", "Kroppsfett", "mdi:percent"),
 }
+EXERCISE_SENSORS = {
+    "exercise_max_weight": ("Max weight", "Maks vekt", "mdi:weight-kilogram"),
+    "exercise_estimated_1rm": ("Estimated 1RM", "Estimert 1RM", "mdi:trophy"),
+    "exercise_best_set": ("Best set", "Beste sett", "mdi:star"),
+    "exercise_last_volume": ("Last volume", "Siste volum", "mdi:weight"),
+    "exercise_last_performed": ("Last performed", "Sist utført", "mdi:calendar-clock"),
+    "exercise_max_reps": ("Max reps", "Maks repetisjoner", "mdi:repeat"),
+    "exercise_workout_count": ("Workouts", "Økter", "mdi:counter"),
+    "exercise_total_sets": (
+        "Total sets",
+        "Totalt antall sett",
+        "mdi:format-list-numbered",
+    ),
+    "exercise_total_reps": ("Total reps", "Totalt antall repetisjoner", "mdi:repeat"),
+    "exercise_total_volume": ("Total volume", "Totalt volum", "mdi:weight"),
+    "exercise_last_sets": ("Last sets", "Sett siste økt", "mdi:format-list-numbered"),
+    "exercise_last_reps": ("Last reps", "Repetisjoner siste økt", "mdi:repeat"),
+    "exercise_last_top_weight": (
+        "Last top weight",
+        "Tyngste vekt siste økt",
+        "mdi:weight-kilogram",
+    ),
+    "exercise_max_distance": (
+        "Longest distance",
+        "Lengste distanse",
+        "mdi:map-marker-distance",
+    ),
+    "exercise_total_distance": (
+        "Total distance",
+        "Total distanse",
+        "mdi:map-marker-distance",
+    ),
+    "exercise_max_duration": (
+        "Longest duration",
+        "Lengste varighet",
+        "mdi:timer-outline",
+    ),
+    "exercise_total_duration": ("Total duration", "Total varighet", "mdi:timer-sand"),
+    "routine_last_volume": ("Last volume", "Siste volum", "mdi:weight"),
+    "routine_previous_volume": ("Previous volume", "Forrige volum", "mdi:weight"),
+    "routine_volume_change": ("Volume change", "Volumendring", "mdi:trending-up"),
+    "routine_last_performed": ("Last performed", "Sist utført", "mdi:calendar-clock"),
+    "routine_workout_count": ("Workouts", "Økter", "mdi:counter"),
+    "routine_last_duration": (
+        "Last duration",
+        "Varighet siste økt",
+        "mdi:timer-outline",
+    ),
+}
+
 for key, (en, nb, _unit) in MEASUREMENTS.items():
     if key.endswith("_cm") or _unit == "cm":
         SENSORS[key.removesuffix("_cm")] = (en, nb, "mdi:tape-measure")
+SENSORS |= EXERCISE_SENSORS
 
 # ------------------------------------------------------------ select labels
 

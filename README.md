@@ -39,9 +39,40 @@ Polling interval (default 15 min, 5–1440) is set under *Configure*.
 Hevy does not state the unit of `abdomen`, `waist`, `hips`, `*_thigh` and
 `*_calf`; they are assumed to be cm, like the other circumference fields.
 
-The integration loads the last 30 days of workouts once, then syncs
-incrementally via `/v1/workouts/events`, which keeps the number of API
-calls low.
+On first start the integration downloads the **full workout history** and
+caches it locally (`.storage/hevy.<entry_id>`). After that it syncs
+incrementally via `/v1/workouts/events`, so restarts and polls only fetch
+changes.
+
+## Devices per exercise and per routine
+
+Besides the account device, every exercise you have logged and every routine
+in Hevy gets its own device (linked to the account via *via device*), each
+with several sensors. New exercises/routines appear automatically; devices for
+routines deleted in Hevy are removed.
+
+**Exercise device** (named after the exercise, model = primary muscle group).
+Sensors are only created when the exercise has that kind of data:
+
+| Sensor | Default | Notes |
+|---|---|---|
+| Max weight | on | Heaviest working set; attribute `date` |
+| Estimated 1RM | on | Epley: weight × (1 + reps/30), 1 rep = weight; attributes describe the best set |
+| Last volume | on | Weight × reps in the latest workout |
+| Last performed | on | Timestamp; attributes: template id, type, muscle groups |
+| Longest distance / Longest duration | on | Cardio exercises only |
+| Best set | off | e.g. `100 kg × 5` |
+| Max reps, Workouts, Total sets/reps/volume | off | All-time |
+| Last sets / Last reps / Last top weight | off | Latest workout |
+| Total distance / Total duration | off | Cardio exercises only |
+
+**Routine device** (model shows the routine folder): Last volume (attributes:
+folder, exercises, workout id), Previous volume, Volume change (%), Last
+performed, Workouts, Last duration (off by default). Based on workouts started
+from the routine.
+
+Warm-up sets are excluded from max weight, 1RM and all volume figures
+(including the account-level volume sensors).
 
 ### Event: `hevy_new_workout`
 Fired when a new workout shows up in Hevy. Data: `config_entry_id`,

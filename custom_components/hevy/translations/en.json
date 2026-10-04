@@ -137,6 +137,75 @@
       },
       "right_calf": {
         "name": "Right calf"
+      },
+      "exercise_max_weight": {
+        "name": "Max weight"
+      },
+      "exercise_estimated_1rm": {
+        "name": "Estimated 1RM"
+      },
+      "exercise_best_set": {
+        "name": "Best set"
+      },
+      "exercise_last_volume": {
+        "name": "Last volume"
+      },
+      "exercise_last_performed": {
+        "name": "Last performed"
+      },
+      "exercise_max_reps": {
+        "name": "Max reps"
+      },
+      "exercise_workout_count": {
+        "name": "Workouts"
+      },
+      "exercise_total_sets": {
+        "name": "Total sets"
+      },
+      "exercise_total_reps": {
+        "name": "Total reps"
+      },
+      "exercise_total_volume": {
+        "name": "Total volume"
+      },
+      "exercise_last_sets": {
+        "name": "Last sets"
+      },
+      "exercise_last_reps": {
+        "name": "Last reps"
+      },
+      "exercise_last_top_weight": {
+        "name": "Last top weight"
+      },
+      "exercise_max_distance": {
+        "name": "Longest distance"
+      },
+      "exercise_total_distance": {
+        "name": "Total distance"
+      },
+      "exercise_max_duration": {
+        "name": "Longest duration"
+      },
+      "exercise_total_duration": {
+        "name": "Total duration"
+      },
+      "routine_last_volume": {
+        "name": "Last volume"
+      },
+      "routine_previous_volume": {
+        "name": "Previous volume"
+      },
+      "routine_volume_change": {
+        "name": "Volume change"
+      },
+      "routine_last_performed": {
+        "name": "Last performed"
+      },
+      "routine_workout_count": {
+        "name": "Workouts"
+      },
+      "routine_last_duration": {
+        "name": "Last duration"
       }
     }
   },

@@ -14,10 +14,8 @@ DEFAULT_SCAN_INTERVAL: Final = timedelta(minutes=15)
 MIN_SCAN_INTERVAL_MINUTES: Final = 5
 MAX_SCAN_INTERVAL_MINUTES: Final = 1440
 
-# How far back the coordinator keeps workouts in memory for statistics sensors.
-RECENT_WORKOUT_DAYS: Final = 30
-# Safety cap on the number of pages fetched when loading recent workouts.
-MAX_WORKOUT_PAGES: Final = 20
+# Safety cap on the number of pages fetched for the full workout history.
+MAX_HISTORY_PAGES: Final = 500
 # Safety cap on the number of pages fetched for routines / routine folders.
 MAX_LIST_PAGES: Final = 50
 
@@ -26,6 +24,10 @@ MAX_PAGE_SIZE: Final = 10
 MAX_TEMPLATE_PAGE_SIZE: Final = 100
 
 EVENT_NEW_WORKOUT: Final = "hevy_new_workout"
+
+STORAGE_VERSION: Final = 1
+# Minimum time between exercise-template catalog downloads.
+TEMPLATE_REFRESH_INTERVAL: Final = timedelta(hours=24)
 
 SET_TYPES: Final = ["warmup", "normal", "failure", "dropset"]
 RPE_VALUES: Final = [6, 7, 7.5, 8, 8.5, 9, 9.5, 10]

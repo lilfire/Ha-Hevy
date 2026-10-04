@@ -14,22 +14,22 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import PERCENTAGE, UnitOfLength, UnitOfMass, UnitOfTime
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.util import dt as dt_util
 
 from .api import JSON
-from .coordinator import (
-    HevyConfigEntry,
-    HevyCoordinator,
-    HevyData,
+from .coordinator import HevyConfigEntry, HevyCoordinator, HevyData
+from .entity import HevyEntity, HevyExerciseEntity, HevyRoutineEntity
+from .stats import (
+    ExerciseStats,
+    RoutineStats,
     parse_time,
     workout_duration_minutes,
     workout_set_count,
     workout_volume_kg,
 )
-from .entity import HevyEntity
 
 PARALLEL_UPDATES = 0
 
@@ -262,6 +262,280 @@ SENSORS: tuple[HevySensorEntityDescription, ...] = (
 )
 
 
+def _iso(value: datetime | None) -> str | None:
+    return value.isoformat() if value else None
+
+
+def _best_set_text(stats: ExerciseStats) -> str | None:
+    best = stats.best_set
+    if best is None:
+        return None
+    return f"{best.weight_kg:g} kg × {best.reps}"
+
+
+def _best_set_attrs(stats: ExerciseStats) -> dict[str, Any]:
+    best = stats.best_set
+    if best is None:
+        return {}
+    return {
+        "weight_kg": best.weight_kg,
+        "reps": best.reps,
+        "estimated_1rm_kg": best.estimated_1rm,
+        "workout_id": best.workout_id,
+        "date": _iso(best.date),
+    }
+
+
+def _exercise_attrs(stats: ExerciseStats) -> dict[str, Any]:
+    template = stats.template
+    return {
+        "exercise_template_id": stats.exercise_template_id,
+        "exercise_type": template.get("type"),
+        "primary_muscle_group": template.get("primary_muscle_group"),
+        "secondary_muscle_groups": template.get("secondary_muscle_groups"),
+        "is_custom": template.get("is_custom"),
+        "last_workout_id": stats.last_workout_id,
+        "last_workout_title": stats.last_workout_title,
+    }
+
+
+@dataclass(frozen=True, kw_only=True)
+class HevyExerciseSensorEntityDescription(SensorEntityDescription):
+    """Describes a per-exercise sensor."""
+
+    value_fn: Callable[[ExerciseStats], StateType | datetime]
+    exists_fn: Callable[[ExerciseStats], bool] = lambda _: True
+    attrs_fn: Callable[[ExerciseStats], dict[str, Any]] | None = None
+
+
+def _weight(**kwargs: Any) -> dict[str, Any]:
+    return {
+        "device_class": SensorDeviceClass.WEIGHT,
+        "native_unit_of_measurement": UnitOfMass.KILOGRAMS,
+        "suggested_display_precision": 1,
+        **kwargs,
+    }
+
+
+EXERCISE_SENSORS: tuple[HevyExerciseSensorEntityDescription, ...] = (
+    # Strength
+    HevyExerciseSensorEntityDescription(
+        key="max_weight",
+        translation_key="exercise_max_weight",
+        **_weight(state_class=SensorStateClass.MEASUREMENT),
+        exists_fn=lambda s: s.has_weight,
+        value_fn=lambda s: s.max_weight_kg,
+        attrs_fn=lambda s: {"date": _iso(s.max_weight_date)},
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="estimated_1rm",
+        translation_key="exercise_estimated_1rm",
+        **_weight(state_class=SensorStateClass.MEASUREMENT),
+        exists_fn=lambda s: s.best_set is not None,
+        value_fn=lambda s: s.best_set.estimated_1rm if s.best_set else None,
+        attrs_fn=_best_set_attrs,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="best_set",
+        translation_key="exercise_best_set",
+        entity_registry_enabled_default=False,
+        exists_fn=lambda s: s.best_set is not None,
+        value_fn=_best_set_text,
+        attrs_fn=_best_set_attrs,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="last_volume",
+        translation_key="exercise_last_volume",
+        **_weight(state_class=SensorStateClass.MEASUREMENT),
+        exists_fn=lambda s: s.has_weight and s.has_reps,
+        value_fn=lambda s: s.last_volume_kg,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="last_performed",
+        translation_key="exercise_last_performed",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda s: s.last_performed,
+        attrs_fn=_exercise_attrs,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="max_reps",
+        translation_key="exercise_max_reps",
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=False,
+        exists_fn=lambda s: s.has_reps,
+        value_fn=lambda s: s.max_reps,
+    ),
+    # Totals
+    HevyExerciseSensorEntityDescription(
+        key="workout_count",
+        translation_key="exercise_workout_count",
+        state_class=SensorStateClass.TOTAL,
+        entity_registry_enabled_default=False,
+        value_fn=lambda s: s.workout_count,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="total_sets",
+        translation_key="exercise_total_sets",
+        state_class=SensorStateClass.TOTAL,
+        entity_registry_enabled_default=False,
+        value_fn=lambda s: s.total_sets,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="total_reps",
+        translation_key="exercise_total_reps",
+        state_class=SensorStateClass.TOTAL,
+        entity_registry_enabled_default=False,
+        exists_fn=lambda s: s.has_reps,
+        value_fn=lambda s: s.total_reps,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="total_volume",
+        translation_key="exercise_total_volume",
+        **_weight(state_class=SensorStateClass.TOTAL, suggested_display_precision=0),
+        entity_registry_enabled_default=False,
+        exists_fn=lambda s: s.has_weight and s.has_reps,
+        value_fn=lambda s: s.total_volume_kg,
+    ),
+    # Last workout
+    HevyExerciseSensorEntityDescription(
+        key="last_sets",
+        translation_key="exercise_last_sets",
+        entity_registry_enabled_default=False,
+        value_fn=lambda s: s.last_sets,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="last_reps",
+        translation_key="exercise_last_reps",
+        entity_registry_enabled_default=False,
+        exists_fn=lambda s: s.has_reps,
+        value_fn=lambda s: s.last_reps,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="last_top_weight",
+        translation_key="exercise_last_top_weight",
+        **_weight(state_class=SensorStateClass.MEASUREMENT),
+        entity_registry_enabled_default=False,
+        exists_fn=lambda s: s.has_weight,
+        value_fn=lambda s: s.last_top_weight_kg,
+    ),
+    # Cardio
+    HevyExerciseSensorEntityDescription(
+        key="max_distance",
+        translation_key="exercise_max_distance",
+        device_class=SensorDeviceClass.DISTANCE,
+        native_unit_of_measurement=UnitOfLength.METERS,
+        suggested_unit_of_measurement=UnitOfLength.KILOMETERS,
+        suggested_display_precision=2,
+        state_class=SensorStateClass.MEASUREMENT,
+        exists_fn=lambda s: s.has_distance,
+        value_fn=lambda s: s.max_distance_m,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="total_distance",
+        translation_key="exercise_total_distance",
+        device_class=SensorDeviceClass.DISTANCE,
+        native_unit_of_measurement=UnitOfLength.METERS,
+        suggested_unit_of_measurement=UnitOfLength.KILOMETERS,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.TOTAL,
+        entity_registry_enabled_default=False,
+        exists_fn=lambda s: s.has_distance,
+        value_fn=lambda s: s.total_distance_m,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="max_duration",
+        translation_key="exercise_max_duration",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        suggested_unit_of_measurement=UnitOfTime.MINUTES,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.MEASUREMENT,
+        exists_fn=lambda s: s.has_duration,
+        value_fn=lambda s: s.max_duration_s,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="total_duration",
+        translation_key="exercise_total_duration",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        suggested_unit_of_measurement=UnitOfTime.HOURS,
+        suggested_display_precision=1,
+        state_class=SensorStateClass.TOTAL,
+        entity_registry_enabled_default=False,
+        exists_fn=lambda s: s.has_duration,
+        value_fn=lambda s: s.total_duration_s,
+    ),
+)
+
+
+@dataclass(frozen=True, kw_only=True)
+class HevyRoutineSensorEntityDescription(SensorEntityDescription):
+    """Describes a per-routine sensor."""
+
+    value_fn: Callable[[RoutineStats], StateType | datetime]
+    attrs_fn: Callable[[RoutineStats], dict[str, Any]] | None = None
+
+
+def _routine_attrs(stats: RoutineStats) -> dict[str, Any]:
+    return {
+        "routine_id": stats.routine_id,
+        "folder_id": stats.folder_id,
+        "folder_name": stats.folder_name,
+        "last_workout_id": stats.last_workout_id,
+        "exercises": stats.exercises,
+    }
+
+
+ROUTINE_SENSORS: tuple[HevyRoutineSensorEntityDescription, ...] = (
+    HevyRoutineSensorEntityDescription(
+        key="last_volume",
+        translation_key="routine_last_volume",
+        **_weight(
+            state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0
+        ),
+        value_fn=lambda s: s.last_volume_kg,
+        attrs_fn=_routine_attrs,
+    ),
+    HevyRoutineSensorEntityDescription(
+        key="previous_volume",
+        translation_key="routine_previous_volume",
+        **_weight(
+            state_class=SensorStateClass.MEASUREMENT, suggested_display_precision=0
+        ),
+        value_fn=lambda s: s.previous_volume_kg,
+    ),
+    HevyRoutineSensorEntityDescription(
+        key="volume_change",
+        translation_key="routine_volume_change",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=1,
+        value_fn=lambda s: s.volume_change_pct,
+    ),
+    HevyRoutineSensorEntityDescription(
+        key="last_performed",
+        translation_key="routine_last_performed",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda s: s.last_performed,
+    ),
+    HevyRoutineSensorEntityDescription(
+        key="workout_count",
+        translation_key="routine_workout_count",
+        state_class=SensorStateClass.TOTAL,
+        value_fn=lambda s: s.workout_count,
+    ),
+    HevyRoutineSensorEntityDescription(
+        key="last_duration",
+        translation_key="routine_last_duration",
+        device_class=SensorDeviceClass.DURATION,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
+        suggested_display_precision=0,
+        entity_registry_enabled_default=False,
+        value_fn=lambda s: s.last_duration_min,
+    ),
+)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: HevyConfigEntry,
@@ -271,9 +545,38 @@ async def async_setup_entry(
     coordinator = entry.runtime_data
     async_add_entities(HevySensor(coordinator, description) for description in SENSORS)
 
+    known: set[tuple[str, str, str]] = set()
+
+    @callback
+    def _add_new_entities() -> None:
+        """Add sensors for exercises/routines (and data types) not seen before."""
+        data = coordinator.data
+        new: list[SensorEntity] = []
+        for template_id, stats in data.exercises.items():
+            for description in EXERCISE_SENSORS:
+                key = ("exercise", template_id, description.key)
+                if key in known or not description.exists_fn(stats):
+                    continue
+                known.add(key)
+                new.append(HevyExerciseSensor(coordinator, template_id, description))
+        for routine_id in data.routine_stats:
+            for routine_description in ROUTINE_SENSORS:
+                key = ("routine", routine_id, routine_description.key)
+                if key in known:
+                    continue
+                known.add(key)
+                new.append(
+                    HevyRoutineSensor(coordinator, routine_id, routine_description)
+                )
+        if new:
+            async_add_entities(new)
+
+    _add_new_entities()
+    entry.async_on_unload(coordinator.async_add_listener(_add_new_entities))
+
 
 class HevySensor(HevyEntity, SensorEntity):
-    """A Hevy sensor."""
+    """A sensor on the account device."""
 
     entity_description: HevySensorEntityDescription
 
@@ -297,3 +600,63 @@ class HevySensor(HevyEntity, SensorEntity):
         if self.entity_description.attrs_fn is None:
             return None
         return self.entity_description.attrs_fn(self.coordinator.data)
+
+
+class HevyExerciseSensor(HevyExerciseEntity, SensorEntity):
+    """A sensor on an exercise device."""
+
+    entity_description: HevyExerciseSensorEntityDescription
+
+    def __init__(
+        self,
+        coordinator: HevyCoordinator,
+        template_id: str,
+        description: HevyExerciseSensorEntityDescription,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, template_id, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> StateType | datetime:
+        """Return the state."""
+        stats = self.stats
+        return self.entity_description.value_fn(stats) if stats else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra attributes."""
+        stats = self.stats
+        if self.entity_description.attrs_fn is None or stats is None:
+            return None
+        return self.entity_description.attrs_fn(stats)
+
+
+class HevyRoutineSensor(HevyRoutineEntity, SensorEntity):
+    """A sensor on a routine device."""
+
+    entity_description: HevyRoutineSensorEntityDescription
+
+    def __init__(
+        self,
+        coordinator: HevyCoordinator,
+        routine_id: str,
+        description: HevyRoutineSensorEntityDescription,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator, routine_id, description.key)
+        self.entity_description = description
+
+    @property
+    def native_value(self) -> StateType | datetime:
+        """Return the state."""
+        stats = self.stats
+        return self.entity_description.value_fn(stats) if stats else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any] | None:
+        """Return extra attributes."""
+        stats = self.stats
+        if self.entity_description.attrs_fn is None or stats is None:
+            return None
+        return self.entity_description.attrs_fn(stats)

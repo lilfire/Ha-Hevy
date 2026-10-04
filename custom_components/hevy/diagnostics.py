@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
@@ -23,7 +24,12 @@ async def async_get_config_entry_diagnostics(
         "data": {
             "user": async_redact_data(data.user, TO_REDACT),
             "workout_count": data.workout_count,
-            "recent_workouts": len(data.workouts),
+            "workouts": len(data.workouts),
+            "exercises": len(data.exercises),
+            "routine_devices": len(data.routine_stats),
+            "example_exercise": (
+                asdict(next(iter(data.exercises.values()))) if data.exercises else None
+            ),
             "latest_workout": data.latest_workout,
             "routines": len(data.routines),
             "routine_folders": len(data.routine_folders),

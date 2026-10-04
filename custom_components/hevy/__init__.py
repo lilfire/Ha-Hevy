@@ -4,13 +4,19 @@ from __future__ import annotations
 
 from homeassistant.const import CONF_API_KEY, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.typing import ConfigType
 
 from .api import HevyClient
 from .const import DOMAIN
-from .coordinator import HevyConfigEntry, HevyCoordinator
+from .coordinator import (
+    HevyConfigEntry,
+    HevyCoordinator,
+    exercise_device_id,
+    routine_device_id,
+    store_for,
+)
 from .services import async_setup_services
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
@@ -44,3 +50,22 @@ async def _async_update_listener(hass: HomeAssistant, entry: HevyConfigEntry) ->
 async def async_unload_entry(hass: HomeAssistant, entry: HevyConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: HevyConfigEntry) -> None:
+    """Delete the cached workout history."""
+    await store_for(hass, entry.entry_id).async_remove()
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: HevyConfigEntry, device: dr.DeviceEntry
+) -> bool:
+    """Allow removing exercise/routine devices that no longer exist in Hevy."""
+    data = entry.runtime_data.data
+    current = {str(entry.unique_id)}
+    current |= {exercise_device_id(entry.unique_id, t) for t in data.exercises}
+    current |= {routine_device_id(entry.unique_id, r) for r in data.routine_stats}
+    return not any(
+        domain == DOMAIN and identifier in current
+        for domain, identifier in device.identifiers
+    )

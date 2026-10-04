@@ -13,7 +13,8 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import AiohttpClien
 from custom_components.hevy.const import EVENT_NEW_WORKOUT
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.util import dt as dt_util
 
 from .conftest import BASE, make_workout
 
@@ -136,7 +137,7 @@ async def test_incremental_sync_fires_event(
     assert [e.data["workout_id"] for e in events] == ["w9"]
     assert events[0].data["volume_kg"] == 1800.0
     ids = [w["id"] for w in coordinator.data.workouts]
-    assert ids == ["w9", "w2"]
+    assert ids == ["w9", "w2", "w3"]
     assert coordinator.data.workouts[1]["title"] == "Pull (edited)"
     assert not calls_to(mock_api, "/v1/workouts")
     since = calls_to(mock_api, "/v1/workouts/events")
@@ -176,3 +177,140 @@ async def test_body_measurement_checks_last_page(
     await hass.config_entries.async_setup(config_entry.entry_id)
     await hass.async_block_till_done()
     assert config_entry.runtime_data.data.body_measurement["weight_kg"] == 77
+
+
+async def test_exercise_and_routine_devices(
+    hass: HomeAssistant, mock_api: AiohttpClientMocker, config_entry: MockConfigEntry
+) -> None:
+    """Each exercise and routine gets its own device under the account."""
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    uid = config_entry.unique_id
+    account = dev_reg.async_get_device({("hevy", uid)})
+    bench = dev_reg.async_get_device({("hevy", f"{uid}_exercise_D04AC939")})
+    routine = dev_reg.async_get_device({("hevy", f"{uid}_routine_r1")})
+    assert bench is not None and routine is not None
+    assert bench.name == "Bench Press (Barbell)"
+    assert bench.model == "Chest"
+    assert bench.via_device_id == account.id
+    assert routine.via_device_id == account.id
+    assert routine.model == "Routine – Plan"
+
+    def bench_entity(key: str) -> str | None:
+        return ent_reg.async_get_entity_id(
+            "sensor", "hevy", f"{uid}_exercise_D04AC939_{key}"
+        )
+
+    # 3 workouts x 2 sets of 100 kg, newest 2 h ago.
+    assert hass.states.get(bench_entity("max_weight")).state == "100.0"
+    one_rm = hass.states.get(bench_entity("estimated_1rm"))
+    assert one_rm.state == str(round(100 * (1 + 10 / 30), 1))
+    assert one_rm.attributes["reps"] == 10
+    assert hass.states.get(bench_entity("last_volume")).state == "1800.0"
+    # Disabled by default; cardio sensors not created for a weight exercise.
+    assert ent_reg.async_get(bench_entity("total_volume")).disabled_by is not None
+    assert bench_entity("max_distance") is None
+
+    routine_last = ent_reg.async_get_entity_id(
+        "sensor", "hevy", f"{uid}_routine_r1_last_volume"
+    )
+    state = hass.states.get(routine_last)
+    assert state.state == "1800.0"
+    assert state.attributes["folder_name"] == "Plan"
+    prev = ent_reg.async_get_entity_id(
+        "sensor", "hevy", f"{uid}_routine_r1_previous_volume"
+    )
+    assert hass.states.get(prev).state == "1800.0"
+
+
+async def test_new_exercise_and_deleted_routine(
+    hass: HomeAssistant, mock_api: AiohttpClientMocker, config_entry: MockConfigEntry
+) -> None:
+    """New exercises add devices without reload; deleted routines are removed."""
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    uid = config_entry.unique_id
+
+    run = make_workout("w10", timedelta(minutes=10), "Run")
+    run["routine_id"] = None
+    run["exercises"] = [
+        {
+            "title": "Running",
+            "exercise_template_id": "RUN1",
+            "sets": [
+                {"type": "normal", "distance_meters": 5000, "duration_seconds": 1500}
+            ],
+        }
+    ]
+    mock_api.clear_requests()
+    for path, payload in (
+        ("user/info", {"data": {"id": "x", "name": "John"}}),
+        ("workouts/count", {"workout_count": 43}),
+        (
+            "workouts/events",
+            {
+                "page": 1,
+                "page_count": 1,
+                "events": [{"type": "updated", "workout": run}],
+            },
+        ),
+        ("routines", {"page": 1, "page_count": 1, "routines": []}),
+        ("routine_folders", {"page": 1, "page_count": 1, "routine_folders": []}),
+        ("body_measurements", {"page": 1, "page_count": 1, "body_measurements": []}),
+        ("exercise_templates", {"page": 1, "page_count": 1, "exercise_templates": []}),
+    ):
+        mock_api.get(f"{BASE}/{path}", json=payload)
+
+    await config_entry.runtime_data.async_refresh()
+    await hass.async_block_till_done()
+
+    dev_reg = dr.async_get(hass)
+    ent_reg = er.async_get(hass)
+    assert dev_reg.async_get_device({("hevy", f"{uid}_exercise_RUN1")}) is not None
+    distance = ent_reg.async_get_entity_id(
+        "sensor", "hevy", f"{uid}_exercise_RUN1_max_distance"
+    )
+    assert hass.states.get(distance).state == "5.0"  # suggested unit km
+    assert (
+        ent_reg.async_get_entity_id("sensor", "hevy", f"{uid}_exercise_RUN1_max_weight")
+        is None
+    )
+    # Routine r1 no longer exists in Hevy -> device removed.
+    assert dev_reg.async_get_device({("hevy", f"{uid}_routine_r1")}) is None
+
+
+async def test_history_restored_from_store(
+    hass: HomeAssistant,
+    mock_api: AiohttpClientMocker,
+    config_entry: MockConfigEntry,
+    hass_storage: dict,
+) -> None:
+    """With a cached history only the events endpoint is used."""
+    hass_storage[f"hevy.{config_entry.entry_id}"] = {
+        "version": 1,
+        "minor_version": 1,
+        "key": f"hevy.{config_entry.entry_id}",
+        "data": {
+            "last_sync": "2026-01-01T00:00:00Z",
+            "templates_fetched": dt_util.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "templates": {"D04AC939": {"title": "Bench", "type": "weight_reps"}},
+            "workouts": [make_workout("cached", timedelta(days=1), "Cached")],
+        },
+    }
+    config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert not calls_to(mock_api, "/v1/workouts")
+    assert not calls_to(mock_api, "/v1/exercise_templates")
+    assert calls_to(mock_api, "/v1/workouts/events")[0].query["since"] == (
+        "2025-12-31T23:59:00Z"
+    )
+    data = config_entry.runtime_data.data
+    assert [w["id"] for w in data.workouts] == ["cached"]
+    assert data.exercises["D04AC939"].title == "Bench"
