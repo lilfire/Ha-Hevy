@@ -256,6 +256,15 @@
     },
     "update_body_measurement": {
       "service": "mdi:human-male-height"
+    },
+    "log_workout": {
+      "service": "mdi:notebook-edit"
+    },
+    "get_workout_history": {
+      "service": "mdi:history"
+    },
+    "get_exercise_catalog": {
+      "service": "mdi:book-open-variant"
     }
   }
 }

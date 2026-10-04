@@ -10,7 +10,11 @@ import yaml
 
 from custom_components.hevy.binary_sensor import BINARY_SENSORS
 from custom_components.hevy.sensor import EXERCISE_SENSORS, ROUTINE_SENSORS, SENSORS
-from custom_components.hevy.services import ATTR_CONFIG_ENTRY_ID, SERVICES
+from custom_components.hevy.services import (
+    ATTR_CONFIG_ENTRY_ID,
+    COORDINATOR_SERVICES,
+    SERVICES,
+)
 
 ROOT = Path(__file__).parent.parent / "custom_components" / "hevy"
 
@@ -25,8 +29,9 @@ def test_services_match_schema() -> None:
     services_yaml = yaml.safe_load((ROOT / "services.yaml").read_text())
     strings = load("strings.json")["services"]
     icons = load("icons.json")["services"]
-    assert set(services_yaml) == set(SERVICES) == set(strings) == set(icons)
-    for name, service in SERVICES.items():
+    all_services = {**SERVICES, **COORDINATOR_SERVICES}
+    assert set(services_yaml) == set(all_services) == set(strings) == set(icons)
+    for name, service in all_services.items():
         schema_keys = {str(k) for k in service.schema} | {ATTR_CONFIG_ENTRY_ID}
         assert set(services_yaml[name]["fields"]) == schema_keys, name
         assert set(strings[name]["fields"]) == schema_keys, name

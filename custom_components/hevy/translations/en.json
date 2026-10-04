@@ -264,6 +264,15 @@
     },
     "no_entries": {
       "message": "No Hevy account is configured."
+    },
+    "unknown_exercise": {
+      "message": "Unknown exercise \"{name}\". Closest matches: {suggestions}"
+    },
+    "start_or_duration": {
+      "message": "Provide start_time or duration_minutes."
+    },
+    "start_after_end": {
+      "message": "The start time must be before the end time."
     }
   },
   "selector": {
@@ -871,6 +880,68 @@
         "right_calf": {
           "name": "Right calf",
           "description": "Right calf (cm)."
+        }
+      }
+    },
+    "log_workout": {
+      "name": "Log workout",
+      "description": "Log a completed workout using exercise names from your catalog.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Title."
+        },
+        "exercises": {
+          "name": "Exercises",
+          "description": "List of exercises. Each has a name (matched against your Hevy exercise catalog) or exercise_template_id, optional notes and sets (type, weight_kg, reps, duration_seconds, distance_meters, rpe)."
+        },
+        "start_time": {
+          "name": "Start time",
+          "description": "When the workout started. Alternative to duration."
+        },
+        "end_time": {
+          "name": "End time",
+          "description": "When the workout ended. Defaults to now."
+        },
+        "duration_minutes": {
+          "name": "Duration",
+          "description": "Workout length; used to derive the start time."
+        },
+        "description": {
+          "name": "Description",
+          "description": "Workout description."
+        },
+        "is_private": {
+          "name": "Private",
+          "description": "Hide the workout from other users."
+        }
+      }
+    },
+    "get_workout_history": {
+      "name": "Get workout history",
+      "description": "Summary and enriched workouts for the last N days (from the local cache).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
+        },
+        "days": {
+          "name": "Days",
+          "description": "Number of days of history."
+        }
+      }
+    },
+    "get_exercise_catalog": {
+      "name": "Get exercise catalog",
+      "description": "All exercise templates, sorted by title.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Account",
+          "description": "The Hevy account to use. Optional if only one is configured."
         }
       }
     }

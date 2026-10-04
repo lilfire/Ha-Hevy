@@ -246,6 +246,53 @@ F = {
         ("End", "Only include history before this time."),
         ("Slutt", "Ta bare med historikk før dette tidspunktet."),
     ),
+    "start_time_optional": (
+        DATETIME,
+        False,
+        "2026-10-03 07:00:00",
+        ("Start time", "When the workout started. Alternative to duration."),
+        ("Starttid", "Når økten startet. Alternativ til varighet."),
+    ),
+    "end_time_optional": (
+        DATETIME,
+        False,
+        "2026-10-03 08:00:00",
+        ("End time", "When the workout ended. Defaults to now."),
+        ("Sluttid", "Når økten sluttet. Standard er nå."),
+    ),
+    "duration_minutes": (
+        num(1, 1440, unit="min"),
+        False,
+        60,
+        ("Duration", "Workout length; used to derive the start time."),
+        ("Varighet", "Øktens lengde; brukes til å beregne starttiden."),
+    ),
+    "log_exercises": (
+        OBJECT,
+        True,
+        '[{"name": "Bench Press (Barbell)", "notes": "Felt strong", '
+        '"sets": [{"type": "warmup", "weight_kg": 60, "reps": 10}, '
+        '{"weight_kg": 100, "reps": 5, "rpe": 9}]}]',
+        (
+            "Exercises",
+            "List of exercises. Each has a name (matched against your Hevy "
+            "exercise catalog) or exercise_template_id, optional notes and "
+            "sets (type, weight_kg, reps, duration_seconds, distance_meters, rpe).",
+        ),
+        (
+            "Øvelser",
+            "Liste med øvelser. Hver har et navn (matches mot øvelseskatalogen "
+            "i Hevy) eller exercise_template_id, valgfri notes og sets (type, "
+            "weight_kg, reps, duration_seconds, distance_meters, rpe).",
+        ),
+    ),
+    "days": (
+        num(1, 3650, unit="d"),
+        False,
+        30,
+        ("Days", "Number of days of history."),
+        ("Dager", "Antall dager med historikk."),
+    ),
     "date": (
         DATE,
         True,
@@ -469,6 +516,44 @@ SERVICES = {
             "Oppdater kroppsmål",
             "Overskriv kroppsmålet for en dato. Felt som utelates blir tømt.",
         ),
+    ),
+    "log_workout": (
+        fl(
+            "title",
+            "exercises=log_exercises",
+            "start_time=start_time_optional",
+            "end_time=end_time_optional",
+            "duration_minutes",
+            "description",
+            "is_private",
+        ),
+        "mdi:notebook-edit",
+        (
+            "Log workout",
+            "Log a completed workout using exercise names from your catalog.",
+        ),
+        (
+            "Logg økt",
+            "Logg en fullført økt med øvelsesnavn fra katalogen din.",
+        ),
+    ),
+    "get_workout_history": (
+        fl("days"),
+        "mdi:history",
+        (
+            "Get workout history",
+            "Summary and enriched workouts for the last N days (from the local cache).",
+        ),
+        (
+            "Hent treningshistorikk",
+            "Oppsummering og detaljerte økter for de siste N dagene (fra lokal cache).",
+        ),
+    ),
+    "get_exercise_catalog": (
+        fl(),
+        "mdi:book-open-variant",
+        ("Get exercise catalog", "All exercise templates, sorted by title."),
+        ("Hent øvelseskatalog", "Alle øvelsesmaler, sortert etter tittel."),
     ),
 }
 
@@ -744,6 +829,9 @@ EXCEPTIONS = {
         "entry_not_loaded": "Hevy config entry {entry_id} is not loaded.",
         "entry_required": "Several Hevy accounts are configured; select one.",
         "no_entries": "No Hevy account is configured.",
+        "unknown_exercise": 'Unknown exercise "{name}". Closest matches: {suggestions}',
+        "start_or_duration": "Provide start_time or duration_minutes.",
+        "start_after_end": "The start time must be before the end time.",
     },
     "nb": {
         "auth_failed": "Hevy avviste API-nøkkelen.",
@@ -755,6 +843,9 @@ EXCEPTIONS = {
         "entry_not_loaded": "Hevy-oppføringen {entry_id} er ikke lastet.",
         "entry_required": "Flere Hevy-kontoer er satt opp; velg én.",
         "no_entries": "Ingen Hevy-konto er satt opp.",
+        "unknown_exercise": 'Ukjent øvelse "{name}". Nærmeste treff: {suggestions}',
+        "start_or_duration": "Oppgi start_time eller duration_minutes.",
+        "start_after_end": "Starttiden må være før sluttiden.",
     },
 }
 

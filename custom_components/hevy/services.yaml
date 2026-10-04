@@ -799,3 +799,75 @@ update_body_measurement:
           step: 0.1
           mode: box
           unit_of_measurement: cm
+log_workout:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: hevy
+    title:
+      required: true
+      example: Morning Workout
+      selector:
+        text:
+    exercises:
+      required: true
+      example: '[{"name": "Bench Press (Barbell)", "notes": "Felt strong", "sets": [{"type": "warmup",
+        "weight_kg": 60, "reps": 10}, {"weight_kg": 100, "reps": 5, "rpe": 9}]}]'
+      selector:
+        object:
+    start_time:
+      required: false
+      example: '2026-10-03 07:00:00'
+      selector:
+        datetime:
+    end_time:
+      required: false
+      example: '2026-10-03 08:00:00'
+      selector:
+        datetime:
+    duration_minutes:
+      required: false
+      example: 60
+      selector:
+        number:
+          min: 1
+          step: 1
+          mode: box
+          max: 1440
+          unit_of_measurement: min
+    description:
+      required: false
+      example: Pushed myself to the limit today!
+      selector:
+        text:
+    is_private:
+      required: false
+      example: false
+      selector:
+        boolean:
+get_workout_history:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: hevy
+    days:
+      required: false
+      example: 30
+      selector:
+        number:
+          min: 1
+          step: 1
+          mode: box
+          max: 3650
+          unit_of_measurement: d
+get_exercise_catalog:
+  fields:
+    config_entry_id:
+      required: false
+      selector:
+        config_entry:
+          integration: hevy

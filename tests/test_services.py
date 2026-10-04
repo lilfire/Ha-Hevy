@@ -261,3 +261,120 @@ async def test_unknown_entry(hass: HomeAssistant, loaded) -> None:
             blocking=True,
             return_response=True,
         )
+
+
+async def test_log_workout_by_name(
+    hass: HomeAssistant, loaded, mock_api: AiohttpClientMocker
+) -> None:
+    """Names are matched case-insensitively; duration derives the start."""
+    mock_api.post(
+        f"{BASE}/workouts",
+        json={"workout": [{"id": "new-id", "title": "Quick push"}]},
+    )
+    resp = await hass.services.async_call(
+        DOMAIN,
+        "log_workout",
+        {
+            "title": "Quick push",
+            "end_time": "2026-10-03T08:00:00Z",
+            "duration_minutes": 40,
+            "exercises": [
+                {
+                    "name": "bench press (barbell)",
+                    "sets": [{"weight_kg": 100, "reps": 5, "rpe": 9}],
+                }
+            ],
+        },
+        blocking=True,
+        return_response=True,
+    )
+    assert resp == {"workout_id": "new-id", "title": "Quick push"}
+    body = calls(mock_api, "POST", "/v1/workouts")[0][2]["workout"]
+    assert body["start_time"] == "2026-10-03T07:20:00Z"
+    assert body["end_time"] == "2026-10-03T08:00:00Z"
+    assert body["exercises"][0]["exercise_template_id"] == "D04AC939"
+
+
+async def test_log_workout_unknown_name_posts_nothing(
+    hass: HomeAssistant, loaded, mock_api: AiohttpClientMocker
+) -> None:
+    """Unknown names raise with suggestions and nothing is sent."""
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN,
+            "log_workout",
+            {
+                "title": "x",
+                "duration_minutes": 30,
+                "exercises": [{"name": "Bench Pres", "sets": [{"reps": 5}]}],
+            },
+            blocking=True,
+        )
+    assert err.value.translation_key == "unknown_exercise"
+    assert "Bench Press (Barbell)" in err.value.translation_placeholders["suggestions"]
+    assert not calls(mock_api, "POST", "/v1/workouts")
+
+
+async def test_log_workout_requires_start_or_duration(
+    hass: HomeAssistant, loaded
+) -> None:
+    """Without start_time or duration the call is rejected."""
+    with pytest.raises(ServiceValidationError) as err:
+        await hass.services.async_call(
+            DOMAIN,
+            "log_workout",
+            {
+                "title": "x",
+                "exercises": [{"exercise_template_id": "A", "sets": [{"reps": 5}]}],
+            },
+            blocking=True,
+        )
+    assert err.value.translation_key == "start_or_duration"
+
+
+async def test_log_workout_set_needs_measurement(hass: HomeAssistant, loaded) -> None:
+    """A set without any measurement fails validation."""
+    with pytest.raises(vol.Invalid):
+        await hass.services.async_call(
+            DOMAIN,
+            "log_workout",
+            {
+                "title": "x",
+                "duration_minutes": 30,
+                "exercises": [
+                    {"exercise_template_id": "A", "sets": [{"type": "normal"}]}
+                ],
+            },
+            blocking=True,
+        )
+
+
+async def test_history_and_catalog(
+    hass: HomeAssistant, loaded, mock_api: AiohttpClientMocker
+) -> None:
+    """History comes from the cache; catalog is sorted."""
+    before = len(mock_api.mock_calls)
+    resp = await hass.services.async_call(
+        DOMAIN,
+        "get_workout_history",
+        {"days": 7},
+        blocking=True,
+        return_response=True,
+    )
+    assert len(mock_api.mock_calls) == before  # no API calls
+    assert resp["summary"]["total_workouts"] == 2
+    assert resp["summary"]["total_volume_kg"] == 3600.0
+    assert resp["summary"]["avg_duration_minutes"] == 60.0
+    assert resp["workouts"][0]["muscle_groups"] == ["chest"]
+
+    catalog = await hass.services.async_call(
+        DOMAIN, "get_exercise_catalog", {}, blocking=True, return_response=True
+    )
+    assert catalog["count"] == 1
+    assert catalog["exercises"][0] == {
+        "id": "D04AC939",
+        "title": "Bench Press (Barbell)",
+        "type": "weight_reps",
+        "muscle_group": "chest",
+        "is_custom": False,
+    }

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
+import difflib
 from typing import Any
 
 import voluptuous as vol
@@ -41,7 +42,8 @@ from .const import (
     RPE_VALUES,
     SET_TYPES,
 )
-from .coordinator import HevyConfigEntry
+from .coordinator import HevyConfigEntry, HevyCoordinator
+from .stats import parse_time, workout_summary
 
 ATTR_CONFIG_ENTRY_ID = "config_entry_id"
 
@@ -212,6 +214,209 @@ class HevyService:
     write: bool = False
 
 
+@dataclass(frozen=True)
+class HevyCoordinatorService:
+    """A service implemented on top of the coordinator (cache + client)."""
+
+    schema: dict[Any, Any]
+    call: Callable[[HevyCoordinator, dict[str, Any]], Awaitable[Any]]
+    write: bool = False
+
+
+# ------------------------------------------------------------ log_workout
+
+
+def _has_measurement(value: dict[str, Any]) -> dict[str, Any]:
+    if all(
+        value.get(key) is None
+        for key in ("weight_kg", "reps", "duration_seconds", "distance_meters")
+    ):
+        raise vol.Invalid(
+            "each set needs weight_kg, reps, duration_seconds or distance_meters"
+        )
+    return value
+
+
+LOG_EXERCISE_SCHEMA = vol.All(
+    vol.Schema(
+        {
+            vol.Exclusive("name", "exercise"): cv.string,
+            vol.Exclusive("exercise_template_id", "exercise"): cv.string,
+            vol.Optional("superset_id", default=None): _OPT_INT,
+            vol.Optional("notes", default=None): vol.Any(None, cv.string),
+            vol.Required("sets"): vol.All(
+                cv.ensure_list,
+                vol.Length(min=1),
+                [vol.All(WORKOUT_SET_SCHEMA, _has_measurement)],
+            ),
+        }
+    ),
+    cv.has_at_least_one_key("name", "exercise_template_id"),
+)
+
+LOG_WORKOUT_FIELDS = {
+    vol.Required("title"): vol.All(cv.string, vol.Length(min=1)),
+    vol.Required("exercises"): vol.All(
+        cv.ensure_list, vol.Length(min=1), [LOG_EXERCISE_SCHEMA]
+    ),
+    vol.Optional("start_time"): _utc_string,
+    vol.Optional("end_time"): _utc_string,
+    vol.Optional("duration_minutes"): vol.All(
+        vol.Coerce(float), vol.Range(min=1, max=1440)
+    ),
+    vol.Optional("description", default=None): vol.Any(None, cv.string),
+    vol.Optional("is_private", default=False): cv.boolean,
+}
+
+
+def resolve_exercise(catalog: dict[str, JSON], name: str) -> str:
+    """Map an exercise name to a template id (exact, then case-insensitive)."""
+    titles = {t.get("title"): tid for tid, t in catalog.items() if t.get("title")}
+    if name in titles:
+        return titles[name]
+    lowered = {title.casefold(): tid for title, tid in titles.items()}
+    if name.casefold() in lowered:
+        return lowered[name.casefold()]
+    suggestions = difflib.get_close_matches(name, list(titles), n=5, cutoff=0.4)
+    raise ServiceValidationError(
+        translation_domain=DOMAIN,
+        translation_key="unknown_exercise",
+        translation_placeholders={
+            "name": name,
+            "suggestions": ", ".join(suggestions) or "-",
+        },
+    )
+
+
+def _format_time(value: datetime) -> str:
+    return dt_util.as_utc(value).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def extract_workout(response: Any) -> JSON:
+    """Return the workout object from a create/update response."""
+    if isinstance(response, dict):
+        inner = response.get("workout", response)
+        if isinstance(inner, list):
+            inner = inner[0] if inner else {}
+        if isinstance(inner, dict):
+            return inner
+    if isinstance(response, list) and response and isinstance(response[0], dict):
+        return response[0]
+    return {}
+
+
+async def _log_workout(coordinator: HevyCoordinator, data: dict[str, Any]) -> JSON:
+    end = cv.datetime(data["end_time"]) if "end_time" in data else dt_util.utcnow()
+    if "start_time" in data:
+        start = cv.datetime(data["start_time"])
+    elif "duration_minutes" in data:
+        start = end - timedelta(minutes=data["duration_minutes"])
+    else:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="start_or_duration"
+        )
+    if start >= end:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN, translation_key="start_after_end"
+        )
+    catalog: dict[str, JSON] = {}
+    if any("name" in ex for ex in data["exercises"]):
+        catalog = await coordinator.async_ensure_catalog()
+    exercises = [
+        {
+            "exercise_template_id": ex.get("exercise_template_id")
+            or resolve_exercise(catalog, ex["name"]),
+            "superset_id": ex["superset_id"],
+            "notes": ex["notes"],
+            "sets": ex["sets"],
+        }
+        for ex in data["exercises"]
+    ]
+    response = await coordinator.client.create_workout(
+        {
+            "title": data["title"],
+            "description": data["description"],
+            "start_time": _format_time(start),
+            "end_time": _format_time(end),
+            "is_private": data["is_private"],
+            "exercises": exercises,
+        }
+    )
+    workout = extract_workout(response)
+    return {"workout_id": workout.get("id"), "title": workout.get("title")}
+
+
+# ------------------------------------------------------ cache-based reads
+
+
+async def _get_workout_history(
+    coordinator: HevyCoordinator, data: dict[str, Any]
+) -> JSON:
+    since = dt_util.utcnow() - timedelta(days=data["days"])
+    templates = coordinator.data.templates
+    workouts = [
+        workout_summary(w, templates)
+        for w in coordinator.data.workouts
+        if (t := parse_time(w.get("start_time"))) is not None and t >= since
+    ]
+    durations = [w["duration_minutes"] for w in workouts if w["duration_minutes"]]
+    total_volume = round(sum(w["volume_kg"] for w in workouts), 2)
+    days = {
+        dt_util.as_local(t).date()
+        for w in workouts
+        if (t := parse_time(w["start_time"])) is not None
+    }
+    return {
+        "summary": {
+            "days": data["days"],
+            "total_workouts": len(workouts),
+            "workout_days": len(days),
+            "total_volume_kg": total_volume,
+            "avg_duration_minutes": round(sum(durations) / len(durations), 1)
+            if durations
+            else None,
+            "avg_volume_kg": round(total_volume / len(workouts), 2)
+            if workouts
+            else None,
+        },
+        "workouts": workouts,
+    }
+
+
+async def _get_exercise_catalog(
+    coordinator: HevyCoordinator, data: dict[str, Any]
+) -> JSON:
+    catalog = await coordinator.async_ensure_catalog()
+    exercises = sorted(
+        (
+            {
+                "id": tid,
+                "title": t.get("title"),
+                "type": t.get("type"),
+                "muscle_group": t.get("primary_muscle_group"),
+                "is_custom": t.get("is_custom"),
+            }
+            for tid, t in catalog.items()
+        ),
+        key=lambda e: (e["title"] or "").casefold(),
+    )
+    return {"count": len(exercises), "exercises": exercises}
+
+
+COORDINATOR_SERVICES: dict[str, HevyCoordinatorService] = {
+    "log_workout": HevyCoordinatorService(LOG_WORKOUT_FIELDS, _log_workout, write=True),
+    "get_workout_history": HevyCoordinatorService(
+        {
+            vol.Optional("days", default=30): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=3650)
+            )
+        },
+        _get_workout_history,
+    ),
+    "get_exercise_catalog": HevyCoordinatorService({}, _get_exercise_catalog),
+}
+
+
 SERVICES: dict[str, HevyService] = {
     # User
     "get_user_info": HevyService({}, lambda c, d: c.get_user_info()),
@@ -369,14 +574,17 @@ def _get_entry(hass: HomeAssistant, call: ServiceCall) -> HevyConfigEntry:
 
 
 def _make_handler(
-    hass: HomeAssistant, service: HevyService
+    hass: HomeAssistant, service: HevyService | HevyCoordinatorService
 ) -> Callable[[ServiceCall], Awaitable[ServiceResponse]]:
     async def _handle(call: ServiceCall) -> ServiceResponse:
         entry = _get_entry(hass, call)
         coordinator = entry.runtime_data
         data = {k: v for k, v in call.data.items() if k != ATTR_CONFIG_ENTRY_ID}
         try:
-            result = await service.call(coordinator.client, data)
+            if isinstance(service, HevyCoordinatorService):
+                result = await service.call(coordinator, data)
+            else:
+                result = await service.call(coordinator.client, data)
         except HevyAuthError as err:
             entry.async_start_reauth(hass)
             raise HomeAssistantError(
@@ -425,7 +633,11 @@ def _make_handler(
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register all Hevy services."""
-    for name, service in SERVICES.items():
+    all_services: dict[str, HevyService | HevyCoordinatorService] = {
+        **SERVICES,
+        **COORDINATOR_SERVICES,
+    }
+    for name, service in all_services.items():
         hass.services.async_register(
             DOMAIN,
             name,

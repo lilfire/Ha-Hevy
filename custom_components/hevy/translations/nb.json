@@ -264,6 +264,15 @@
     },
     "no_entries": {
       "message": "Ingen Hevy-konto er satt opp."
+    },
+    "unknown_exercise": {
+      "message": "Ukjent øvelse \"{name}\". Nærmeste treff: {suggestions}"
+    },
+    "start_or_duration": {
+      "message": "Oppgi start_time eller duration_minutes."
+    },
+    "start_after_end": {
+      "message": "Starttiden må være før sluttiden."
     }
   },
   "selector": {
@@ -871,6 +880,68 @@
         "right_calf": {
           "name": "Høyre legg",
           "description": "Høyre legg (cm)."
+        }
+      }
+    },
+    "log_workout": {
+      "name": "Logg økt",
+      "description": "Logg en fullført økt med øvelsesnavn fra katalogen din.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "title": {
+          "name": "Tittel",
+          "description": "Tittel."
+        },
+        "exercises": {
+          "name": "Øvelser",
+          "description": "Liste med øvelser. Hver har et navn (matches mot øvelseskatalogen i Hevy) eller exercise_template_id, valgfri notes og sets (type, weight_kg, reps, duration_seconds, distance_meters, rpe)."
+        },
+        "start_time": {
+          "name": "Starttid",
+          "description": "Når økten startet. Alternativ til varighet."
+        },
+        "end_time": {
+          "name": "Sluttid",
+          "description": "Når økten sluttet. Standard er nå."
+        },
+        "duration_minutes": {
+          "name": "Varighet",
+          "description": "Øktens lengde; brukes til å beregne starttiden."
+        },
+        "description": {
+          "name": "Beskrivelse",
+          "description": "Beskrivelse av økten."
+        },
+        "is_private": {
+          "name": "Privat",
+          "description": "Skjul økten for andre brukere."
+        }
+      }
+    },
+    "get_workout_history": {
+      "name": "Hent treningshistorikk",
+      "description": "Oppsummering og detaljerte økter for de siste N dagene (fra lokal cache).",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
+        },
+        "days": {
+          "name": "Dager",
+          "description": "Antall dager med historikk."
+        }
+      }
+    },
+    "get_exercise_catalog": {
+      "name": "Hent øvelseskatalog",
+      "description": "Alle øvelsesmaler, sortert etter tittel.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Konto",
+          "description": "Hevy-kontoen som skal brukes. Valgfri hvis bare én er satt opp."
         }
       }
     }
