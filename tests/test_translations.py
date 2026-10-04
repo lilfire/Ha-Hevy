@@ -8,6 +8,7 @@ import re
 
 import yaml
 
+from custom_components.hevy.binary_sensor import BINARY_SENSORS
 from custom_components.hevy.sensor import EXERCISE_SENSORS, ROUTINE_SENSORS, SENSORS
 from custom_components.hevy.services import ATTR_CONFIG_ENTRY_ID, SERVICES
 
@@ -31,6 +32,15 @@ def test_services_match_schema() -> None:
         assert set(strings[name]["fields"]) == schema_keys, name
 
 
+def test_platform_translations() -> None:
+    """Binary sensors and calendar have names and icons."""
+    strings = load("strings.json")["entity"]
+    icons = load("icons.json")["entity"]
+    keys = {d.translation_key for d in BINARY_SENSORS}
+    assert keys == set(strings["binary_sensor"]) == set(icons["binary_sensor"])
+    assert set(strings["calendar"]) == set(icons["calendar"]) == {"workouts"}
+
+
 def test_sensor_translations() -> None:
     """Every sensor has a name and icon."""
     keys = {d.translation_key for d in (*SENSORS, *EXERCISE_SENSORS, *ROUTINE_SENSORS)}
@@ -44,7 +54,9 @@ def test_exception_keys() -> None:
     used: set[str] = set()
     for path in ROOT.glob("*.py"):
         used |= set(re.findall(r'translation_key="([a-z_]+)"', path.read_text()))
-    used -= {d.translation_key for d in (*SENSORS, *EXERCISE_SENSORS, *ROUTINE_SENSORS)}
+    used -= {
+        key for platform in load("strings.json")["entity"].values() for key in platform
+    }
     assert used <= exceptions, used - exceptions
 
 

@@ -47,6 +47,19 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "worked_out_today": {
+        "name": "Worked out today"
+      },
+      "worked_out_this_week": {
+        "name": "Worked out this week"
+      }
+    },
+    "calendar": {
+      "workouts": {
+        "name": "Workouts"
+      }
+    },
     "sensor": {
       "workout_count": {
         "name": "Workouts"
@@ -77,6 +90,21 @@
       },
       "workouts_last_30_days": {
         "name": "Workouts last 30 days"
+      },
+      "current_streak": {
+        "name": "Current streak"
+      },
+      "muscle_group_summary": {
+        "name": "Muscle groups last workout"
+      },
+      "weekly_muscle_volume": {
+        "name": "Volume last 7 days"
+      },
+      "next_workout": {
+        "name": "Next workout"
+      },
+      "exercise_distance_this_week": {
+        "name": "Distance this week"
       },
       "routines": {
         "name": "Routines"

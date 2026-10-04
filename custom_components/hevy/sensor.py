@@ -26,8 +26,10 @@ from .stats import (
     ExerciseStats,
     RoutineStats,
     parse_time,
+    start_of_week,
     workout_duration_minutes,
     workout_set_count,
+    workout_summary,
     workout_volume_kg,
 )
 
@@ -40,11 +42,6 @@ def _workouts_since(data: HevyData, start: datetime) -> list[JSON]:
         for w in data.workouts
         if (t := parse_time(w.get("start_time"))) is not None and t >= start
     ]
-
-
-def _start_of_week() -> datetime:
-    today = dt_util.start_of_local_day()
-    return dt_util.as_utc(today - timedelta(days=today.weekday()))
 
 
 def _days_ago(days: int) -> datetime:
@@ -60,24 +57,60 @@ def _latest_workout_attrs(data: HevyData) -> dict[str, Any]:
     workout = data.latest_workout
     if not workout:
         return {}
+    summary = workout_summary(workout, data.templates)
+    summary["workout_id"] = summary.pop("id")
+    summary["description"] = workout.get("description")
+    return summary
+
+
+def _streak_attrs(data: HevyData) -> dict[str, Any]:
+    streak = data.streak
     return {
-        "workout_id": workout.get("id"),
-        "title": workout.get("title"),
-        "description": workout.get("description"),
-        "routine_id": workout.get("routine_id"),
-        "start_time": workout.get("start_time"),
-        "end_time": workout.get("end_time"),
-        "duration_minutes": workout_duration_minutes(workout),
-        "volume_kg": workout_volume_kg(workout),
-        "set_count": workout_set_count(workout),
-        "exercises": [
-            {
-                "title": ex.get("title"),
-                "exercise_template_id": ex.get("exercise_template_id"),
-                "sets": len(ex.get("sets") or []),
-            }
-            for ex in workout.get("exercises") or []
-        ],
+        "longest_streak": streak.longest,
+        "streak_start": streak.current_start.isoformat()
+        if streak.current_start
+        else None,
+        "last_training_day": streak.last_training_day.isoformat()
+        if streak.last_training_day
+        else None,
+    }
+
+
+def _muscle_attrs(data: HevyData) -> dict[str, Any]:
+    muscles = data.muscles
+    return {
+        "last_workout_primary_groups": muscles.last_workout_primary,
+        "last_workout_secondary_groups": muscles.last_workout_secondary,
+        "last_workout_date": muscles.last_workout_date.isoformat()
+        if muscles.last_workout_date
+        else None,
+        "days_since_last": muscles.days_since_last,
+        "muscles_due": muscles.muscles_due,
+    }
+
+
+def _muscle_volume_attrs(data: HevyData) -> dict[str, Any]:
+    volume = data.weekly_muscle_volume
+    return {
+        "muscle_groups": volume.muscle_groups,
+        "exercise_breakdown": volume.exercise_breakdown,
+        "total_sets": volume.total_sets,
+        "total_workouts": volume.total_workouts,
+    }
+
+
+def _next_routine_attrs(data: HevyData) -> dict[str, Any]:
+    routine = data.next_routine
+    if routine is None:
+        return {}
+    return {
+        "routine_id": routine.routine_id,
+        "folder_id": routine.folder_id,
+        "last_routine_id": routine.last_routine_id,
+        "last_routine_title": routine.last_routine_title,
+        "rotation_position": routine.rotation_position,
+        "rotation_total": routine.rotation_total,
+        "exercises_preview": routine.exercises_preview,
     }
 
 
@@ -148,7 +181,7 @@ SENSORS: tuple[HevySensorEntityDescription, ...] = (
         key="workouts_this_week",
         translation_key="workouts_this_week",
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn=lambda d: len(_workouts_since(d, _start_of_week())),
+        value_fn=lambda d: len(_workouts_since(d, start_of_week())),
     ),
     HevySensorEntityDescription(
         key="volume_this_week",
@@ -158,7 +191,7 @@ SENSORS: tuple[HevySensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
         value_fn=lambda d: round(
-            sum(workout_volume_kg(w) for w in _workouts_since(d, _start_of_week())), 2
+            sum(workout_volume_kg(w) for w in _workouts_since(d, start_of_week())), 2
         ),
     ),
     HevySensorEntityDescription(
@@ -172,6 +205,36 @@ SENSORS: tuple[HevySensorEntityDescription, ...] = (
         translation_key="workouts_last_30_days",
         state_class=SensorStateClass.MEASUREMENT,
         value_fn=lambda d: len(_workouts_since(d, _days_ago(30))),
+    ),
+    HevySensorEntityDescription(
+        key="current_streak",
+        translation_key="current_streak",
+        native_unit_of_measurement=UnitOfTime.DAYS,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda d: d.streak.current,
+        attrs_fn=_streak_attrs,
+    ),
+    HevySensorEntityDescription(
+        key="muscle_group_summary",
+        translation_key="muscle_group_summary",
+        value_fn=lambda d: ", ".join(d.muscles.last_workout_primary)[:255] or None,
+        attrs_fn=_muscle_attrs,
+    ),
+    HevySensorEntityDescription(
+        key="weekly_muscle_volume",
+        translation_key="weekly_muscle_volume",
+        device_class=SensorDeviceClass.WEIGHT,
+        native_unit_of_measurement=UnitOfMass.KILOGRAMS,
+        state_class=SensorStateClass.MEASUREMENT,
+        suggested_display_precision=0,
+        value_fn=lambda d: d.weekly_muscle_volume.total_kg,
+        attrs_fn=_muscle_volume_attrs,
+    ),
+    HevySensorEntityDescription(
+        key="next_workout",
+        translation_key="next_workout",
+        value_fn=lambda d: d.next_routine.routine_title if d.next_routine else None,
+        attrs_fn=_next_routine_attrs,
     ),
     HevySensorEntityDescription(
         key="routines",
@@ -296,6 +359,7 @@ def _exercise_attrs(stats: ExerciseStats) -> dict[str, Any]:
         "is_custom": template.get("is_custom"),
         "last_workout_id": stats.last_workout_id,
         "last_workout_title": stats.last_workout_title,
+        "last_workout_sets": stats.last_workout_sets,
     }
 
 
@@ -429,6 +493,17 @@ EXERCISE_SENSORS: tuple[HevyExerciseSensorEntityDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         exists_fn=lambda s: s.has_distance,
         value_fn=lambda s: s.max_distance_m,
+    ),
+    HevyExerciseSensorEntityDescription(
+        key="distance_this_week",
+        translation_key="exercise_distance_this_week",
+        device_class=SensorDeviceClass.DISTANCE,
+        native_unit_of_measurement=UnitOfLength.METERS,
+        suggested_unit_of_measurement=UnitOfLength.KILOMETERS,
+        suggested_display_precision=2,
+        state_class=SensorStateClass.MEASUREMENT,
+        exists_fn=lambda s: s.has_distance,
+        value_fn=lambda s: s.distance_this_week_m,
     ),
     HevyExerciseSensorEntityDescription(
         key="total_distance",

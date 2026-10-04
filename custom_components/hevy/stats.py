@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from homeassistant.util import dt as dt_util
@@ -112,6 +112,8 @@ class ExerciseStats:
     last_sets: int | None = None
     last_reps: int | None = None
     last_top_weight_kg: float | None = None
+    last_workout_sets: list[JSON] = field(default_factory=list)
+    distance_this_week_m: float = 0.0
 
     @property
     def has_weight(self) -> bool:
@@ -140,11 +142,36 @@ def _max(current: float | None, value: float | None) -> float | None:
     return value if current is None else max(current, value)
 
 
+def set_summary(workout_set: JSON) -> JSON:
+    """Compact representation of a logged set."""
+    return {
+        key: workout_set.get(source)
+        for key, source in (
+            ("type", "type"),
+            ("weight_kg", "weight_kg"),
+            ("reps", "reps"),
+            ("rpe", "rpe"),
+            ("distance_m", "distance_meters"),
+            ("duration_s", "duration_seconds"),
+        )
+        if workout_set.get(source) is not None
+    }
+
+
+def start_of_week(now: datetime | None = None) -> datetime:
+    """Monday 00:00 local time of the current week, as UTC."""
+    today = dt_util.start_of_local_day(dt_util.as_local(now) if now else None)
+    return dt_util.as_utc(today - timedelta(days=today.weekday()))
+
+
 def exercise_stats(
-    workouts: list[JSON], templates: dict[str, JSON] | None = None
+    workouts: list[JSON],
+    templates: dict[str, JSON] | None = None,
+    now: datetime | None = None,
 ) -> dict[str, ExerciseStats]:
     """Aggregate statistics per exercise template over all workouts."""
     templates = templates or {}
+    week_start = start_of_week(now)
     stats: dict[str, ExerciseStats] = {}
     ordered = sorted(workouts, key=lambda w: w.get("start_time") or "")
     for workout in ordered:
@@ -208,6 +235,13 @@ def exercise_stats(
             item.last_sets = len(sets)
             item.last_reps = reps_sum
             item.last_top_weight_kg = top_weight
+            item.last_workout_sets = [
+                set_summary(s) for s in exercise.get("sets") or []
+            ]
+            if started is not None and started >= week_start:
+                item.distance_this_week_m += sum(
+                    _num(s.get("distance_meters")) or 0.0 for s in sets
+                )
     return stats
 
 
@@ -278,3 +312,260 @@ def routine_stats(
             item.previous_volume_kg = workout_volume_kg(history[-2])
         result[routine_id] = item
     return result
+
+
+# --------------------------------------------------------------- account-wide
+
+
+def training_days(workouts: list[JSON]) -> list[date]:
+    """Sorted unique local dates with at least one workout."""
+    days = {
+        dt_util.as_local(started).date()
+        for w in workouts
+        if (started := parse_time(w.get("start_time"))) is not None
+    }
+    return sorted(days)
+
+
+@dataclass
+class Streak:
+    """Workout streak, allowing one rest day between training days."""
+
+    current: int = 0
+    longest: int = 0
+    current_start: date | None = None
+    last_training_day: date | None = None
+
+
+def streak(days: list[date], today: date, max_gap: int = 2) -> Streak:
+    """Count training days in chains where days are at most ``max_gap`` apart.
+
+    ``max_gap = 2`` allows a single rest day. The current streak is 0 when the
+    last training day is more than ``max_gap`` days ago.
+    """
+    result = Streak()
+    if not days:
+        return result
+    run = 1
+    run_start = days[0]
+    result.longest = 1
+    for prev, day in zip(days, days[1:], strict=False):
+        if (day - prev).days <= max_gap:
+            run += 1
+        else:
+            run = 1
+            run_start = day
+        result.longest = max(result.longest, run)
+    result.last_training_day = days[-1]
+    if (today - days[-1]).days <= max_gap:
+        result.current = run
+        result.current_start = run_start
+    return result
+
+
+def _muscles(template: JSON) -> tuple[str | None, list[str]]:
+    return template.get("primary_muscle_group"), list(
+        template.get("secondary_muscle_groups") or []
+    )
+
+
+@dataclass
+class MuscleSummary:
+    """Muscle groups trained, recency and due groups."""
+
+    last_workout_primary: list[str] = field(default_factory=list)
+    last_workout_secondary: list[str] = field(default_factory=list)
+    last_workout_date: datetime | None = None
+    days_since_last: dict[str, int] = field(default_factory=dict)
+    muscles_due: list[str] = field(default_factory=list)
+
+
+def muscle_summary(
+    workouts: list[JSON], templates: dict[str, JSON], today: date, due_days: int
+) -> MuscleSummary:
+    """Summarise muscle groups from workouts (newest first or any order)."""
+    result = MuscleSummary()
+    ordered = sorted(workouts, key=lambda w: w.get("start_time") or "", reverse=True)
+    last_trained: dict[str, date] = {}
+    for index, workout in enumerate(ordered):
+        started = parse_time(workout.get("start_time"))
+        if started is None:
+            continue
+        day = dt_util.as_local(started).date()
+        primary: list[str] = []
+        secondary: list[str] = []
+        for exercise in workout.get("exercises") or []:
+            main, others = _muscles(
+                templates.get(exercise.get("exercise_template_id") or "") or {}
+            )
+            if main and main not in primary:
+                primary.append(main)
+            secondary.extend(m for m in others if m not in secondary)
+            if main:
+                last_trained.setdefault(main, day)
+        if index == 0:
+            result.last_workout_primary = primary
+            result.last_workout_secondary = [m for m in secondary if m not in primary]
+            result.last_workout_date = started
+    result.days_since_last = {
+        muscle: (today - day).days
+        for muscle, day in sorted(
+            last_trained.items(), key=lambda kv: kv[1], reverse=True
+        )
+    }
+    result.muscles_due = [
+        muscle for muscle, days in result.days_since_last.items() if days >= due_days
+    ]
+    return result
+
+
+@dataclass
+class MuscleVolume:
+    """Volume per primary muscle group within a period."""
+
+    total_kg: float = 0.0
+    muscle_groups: dict[str, float] = field(default_factory=dict)
+    exercise_breakdown: dict[str, list[JSON]] = field(default_factory=dict)
+    total_sets: int = 0
+    total_workouts: int = 0
+
+
+def muscle_volume(
+    workouts: list[JSON], templates: dict[str, JSON], since: datetime
+) -> MuscleVolume:
+    """Working-set volume per primary muscle group since ``since``."""
+    result = MuscleVolume()
+    per_exercise: dict[tuple[str, str], JSON] = {}
+    for workout in workouts:
+        started = parse_time(workout.get("start_time"))
+        if started is None or started < since:
+            continue
+        result.total_workouts += 1
+        for exercise in workout.get("exercises") or []:
+            template = templates.get(exercise.get("exercise_template_id") or "") or {}
+            muscle = template.get("primary_muscle_group") or "other"
+            sets = working_sets(exercise)
+            volume = exercise_volume_kg(exercise)
+            result.total_sets += len(sets)
+            result.total_kg += volume
+            result.muscle_groups[muscle] = (
+                result.muscle_groups.get(muscle, 0.0) + volume
+            )
+            title = template.get("title") or exercise.get("title") or "?"
+            entry = per_exercise.setdefault(
+                (muscle, title), {"exercise": title, "volume": 0.0, "sets": 0}
+            )
+            entry["volume"] += volume
+            entry["sets"] += len(sets)
+    result.total_kg = round(result.total_kg, 2)
+    result.muscle_groups = {
+        k: round(v, 2)
+        for k, v in sorted(result.muscle_groups.items(), key=lambda kv: -kv[1])
+    }
+    for (muscle, _title), entry in per_exercise.items():
+        entry["volume"] = round(entry["volume"], 2)
+        result.exercise_breakdown.setdefault(muscle, []).append(entry)
+    for entries in result.exercise_breakdown.values():
+        entries.sort(key=lambda e: -e["volume"])
+    return result
+
+
+@dataclass
+class NextRoutine:
+    """Suggested next routine in the rotation."""
+
+    routine_id: str
+    routine_title: str
+    folder_id: int | None
+    last_routine_id: str | None
+    last_routine_title: str | None
+    rotation_position: int
+    rotation_total: int
+    exercises_preview: list[str]
+
+
+def next_routine(workouts: list[JSON], routines: list[JSON]) -> NextRoutine | None:
+    """Pick the next routine of the rotation.
+
+    The rotation is the folder of the most recently performed routine. The
+    next routine is the one in that folder done least recently (never-done
+    routines first, then by title). Hevy's API exposes no routine order, so
+    this reproduces an A/B/C rotation from history.
+    """
+    by_id = {r.get("id"): r for r in routines if r.get("id")}
+    last_done: dict[str, str] = {}
+    last_routine: JSON | None = None
+    for workout in sorted(workouts, key=lambda w: w.get("start_time") or ""):
+        routine_id = workout.get("routine_id")
+        if routine_id in by_id:
+            last_done[routine_id] = workout.get("start_time") or ""
+            last_routine = by_id[routine_id]
+    if last_routine is None:
+        return None
+    folder_id = last_routine.get("folder_id")
+    candidates = sorted(
+        (r for r in routines if r.get("folder_id") == folder_id and r.get("id")),
+        key=lambda r: r.get("title") or "",
+    )
+    if len(candidates) < 2:
+        candidates = [last_routine]
+    ordered = sorted(
+        candidates, key=lambda r: (last_done.get(r["id"], ""), r.get("title") or "")
+    )
+    choice = ordered[0]
+    if len(candidates) > 1 and choice["id"] == last_routine.get("id"):
+        choice = ordered[1]
+    return NextRoutine(
+        routine_id=choice["id"],
+        routine_title=choice.get("title") or choice["id"],
+        folder_id=folder_id,
+        last_routine_id=last_routine.get("id"),
+        last_routine_title=last_routine.get("title"),
+        rotation_position=[r["id"] for r in candidates].index(choice["id"]) + 1,
+        rotation_total=len(candidates),
+        exercises_preview=[
+            e.get("title") for e in choice.get("exercises") or [] if e.get("title")
+        ],
+    )
+
+
+def workout_summary(workout: JSON, templates: dict[str, JSON]) -> JSON:
+    """Enriched, compact description of one workout."""
+    exercises = []
+    primary: list[str] = []
+    for exercise in workout.get("exercises") or []:
+        template = templates.get(exercise.get("exercise_template_id") or "") or {}
+        if (muscle := template.get("primary_muscle_group")) and muscle not in primary:
+            primary.append(muscle)
+        best = None
+        for workout_set in working_sets(exercise):
+            weight = _num(workout_set.get("weight_kg"))
+            reps = _num(workout_set.get("reps"))
+            if (
+                weight
+                and reps
+                and (best is None or estimated_1rm(weight, reps) > best[2])
+            ):
+                best = (weight, int(reps), estimated_1rm(weight, reps))
+        exercises.append(
+            {
+                "title": exercise.get("title"),
+                "exercise_template_id": exercise.get("exercise_template_id"),
+                "notes": exercise.get("notes") or None,
+                "sets": [set_summary(s) for s in exercise.get("sets") or []],
+                "best_set": f"{best[0]:g} kg × {best[1]}" if best else None,
+                "volume_kg": round(exercise_volume_kg(exercise), 2),
+            }
+        )
+    return {
+        "id": workout.get("id"),
+        "title": workout.get("title"),
+        "routine_id": workout.get("routine_id"),
+        "start_time": workout.get("start_time"),
+        "end_time": workout.get("end_time"),
+        "duration_minutes": workout_duration_minutes(workout),
+        "volume_kg": workout_volume_kg(workout),
+        "set_count": workout_set_count(workout),
+        "muscle_groups": primary,
+        "exercises": exercises,
+    }

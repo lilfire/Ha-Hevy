@@ -47,6 +47,19 @@
     }
   },
   "entity": {
+    "binary_sensor": {
+      "worked_out_today": {
+        "name": "Trent i dag"
+      },
+      "worked_out_this_week": {
+        "name": "Trent denne uken"
+      }
+    },
+    "calendar": {
+      "workouts": {
+        "name": "Treningsøkter"
+      }
+    },
     "sensor": {
       "workout_count": {
         "name": "Økter"
@@ -77,6 +90,21 @@
       },
       "workouts_last_30_days": {
         "name": "Økter siste 30 dager"
+      },
+      "current_streak": {
+        "name": "Nåværende streak"
+      },
+      "muscle_group_summary": {
+        "name": "Muskelgrupper siste økt"
+      },
+      "weekly_muscle_volume": {
+        "name": "Volum siste 7 dager"
+      },
+      "next_workout": {
+        "name": "Neste økt"
+      },
+      "exercise_distance_this_week": {
+        "name": "Distanse denne uken"
       },
       "routines": {
         "name": "Rutiner"

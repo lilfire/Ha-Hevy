@@ -28,6 +28,21 @@
       "workouts_last_30_days": {
         "default": "mdi:calendar-month"
       },
+      "current_streak": {
+        "default": "mdi:fire"
+      },
+      "muscle_group_summary": {
+        "default": "mdi:arm-flex"
+      },
+      "weekly_muscle_volume": {
+        "default": "mdi:chart-bar"
+      },
+      "next_workout": {
+        "default": "mdi:skip-next"
+      },
+      "exercise_distance_this_week": {
+        "default": "mdi:map-marker-distance"
+      },
       "routines": {
         "default": "mdi:clipboard-list"
       },
@@ -159,6 +174,19 @@
       },
       "last_workout": {
         "default": "mdi:dumbbell"
+      }
+    },
+    "binary_sensor": {
+      "worked_out_today": {
+        "default": "mdi:check-circle"
+      },
+      "worked_out_this_week": {
+        "default": "mdi:calendar-check"
+      }
+    },
+    "calendar": {
+      "workouts": {
+        "default": "mdi:calendar"
       }
     }
   },

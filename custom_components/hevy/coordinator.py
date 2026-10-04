@@ -25,15 +25,25 @@ from .const import (
     MAX_LIST_PAGES,
     MAX_PAGE_SIZE,
     MAX_TEMPLATE_PAGE_SIZE,
+    MUSCLE_DUE_DAYS,
     STORAGE_VERSION,
     TEMPLATE_REFRESH_INTERVAL,
 )
 from .stats import (
     ExerciseStats,
+    MuscleSummary,
+    MuscleVolume,
+    NextRoutine,
     RoutineStats,
+    Streak,
     exercise_stats,
+    muscle_summary,
+    muscle_volume,
+    next_routine,
     parse_time,
     routine_stats,
+    streak,
+    training_days,
     workout_duration_minutes,
     workout_set_count,
     workout_volume_kg,
@@ -74,6 +84,11 @@ class HevyData:
     body_measurement: JSON | None = None
     exercises: dict[str, ExerciseStats] = field(default_factory=dict)
     routine_stats: dict[str, RoutineStats] = field(default_factory=dict)
+    streak: Streak = field(default_factory=Streak)
+    muscles: MuscleSummary = field(default_factory=MuscleSummary)
+    weekly_muscle_volume: MuscleVolume = field(default_factory=MuscleVolume)
+    next_routine: NextRoutine | None = None
+    templates: dict[str, JSON] = field(default_factory=dict)
 
     @property
     def latest_workout(self) -> JSON | None:
@@ -171,16 +186,20 @@ class HevyCoordinator(DataUpdateCoordinator[HevyData]):
         } - {None}
         if not used - set(self._templates):
             return
-        now = dt_util.utcnow()
         if (
             self._templates_fetched is not None
-            and now - self._templates_fetched < TEMPLATE_REFRESH_INTERVAL
+            and dt_util.utcnow() - self._templates_fetched < TEMPLATE_REFRESH_INTERVAL
         ):
             return
+        await self._fetch_templates()
+
+    async def _fetch_templates(self) -> None:
+        """Download the full exercise template catalog."""
         templates = await self.client.paginate(
             self.client.get_exercise_templates,
             "exercise_templates",
             MAX_TEMPLATE_PAGE_SIZE,
+            MUSCLE_DUE_DAYS,
             MAX_LIST_PAGES,
         )
         self._templates = {
@@ -197,7 +216,7 @@ class HevyCoordinator(DataUpdateCoordinator[HevyData]):
             for t in templates
             if t.get("id")
         }
-        self._templates_fetched = now
+        self._templates_fetched = dt_util.utcnow()
 
     async def _async_update_data(self) -> HevyData:
         """Fetch data from Hevy."""
@@ -280,6 +299,8 @@ class HevyCoordinator(DataUpdateCoordinator[HevyData]):
                     },
                 )
 
+        now = dt_util.utcnow()
+        today = dt_util.as_local(now).date()
         data = HevyData(
             user=user,
             workout_count=count,
@@ -287,11 +308,31 @@ class HevyCoordinator(DataUpdateCoordinator[HevyData]):
             routines=routines,
             routine_folders=folders,
             body_measurement=measurement,
-            exercises=exercise_stats(workouts, self._templates),
+            exercises=exercise_stats(workouts, self._templates, now),
             routine_stats=routine_stats(workouts, routines, folders),
+            streak=streak(training_days(workouts), today),
+            muscles=muscle_summary(workouts, self._templates, today, MUSCLE_DUE_DAYS),
+            weekly_muscle_volume=muscle_volume(
+                workouts, self._templates, now - timedelta(days=7)
+            ),
+            next_routine=next_routine(workouts, routines),
+            templates=self._templates,
         )
         self._remove_stale_devices(data)
         return data
+
+    @property
+    def templates(self) -> dict[str, JSON]:
+        """Cached exercise template catalog keyed by id."""
+        return self._templates
+
+    async def async_ensure_catalog(self) -> dict[str, JSON]:
+        """Make sure the exercise catalog is loaded (used by services/card)."""
+        if not self._templates or self._templates_fetched is None:
+            self._templates_fetched = None
+            await self._fetch_templates()
+            self._store.async_delay_save(self._data_to_store, SAVE_DELAY)
+        return self._templates
 
     def _remove_stale_devices(self, data: HevyData) -> None:
         """Detach exercise/routine devices that no longer exist in Hevy."""

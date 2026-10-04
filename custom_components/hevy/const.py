@@ -28,6 +28,8 @@ EVENT_NEW_WORKOUT: Final = "hevy_new_workout"
 STORAGE_VERSION: Final = 1
 # Minimum time between exercise-template catalog downloads.
 TEMPLATE_REFRESH_INTERVAL: Final = timedelta(hours=24)
+# A muscle group trained before but not within this many days is "due".
+MUSCLE_DUE_DAYS: Final = 4
 
 SET_TYPES: Final = ["warmup", "normal", "failure", "dropset"]
 RPE_VALUES: Final = [6, 7, 7.5, 8, 8.5, 9, 9.5, 10]

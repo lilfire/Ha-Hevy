@@ -509,6 +509,23 @@ SENSORS = {
         "Økter siste 30 dager",
         "mdi:calendar-month",
     ),
+    "current_streak": ("Current streak", "Nåværende streak", "mdi:fire"),
+    "muscle_group_summary": (
+        "Muscle groups last workout",
+        "Muskelgrupper siste økt",
+        "mdi:arm-flex",
+    ),
+    "weekly_muscle_volume": (
+        "Volume last 7 days",
+        "Volum siste 7 dager",
+        "mdi:chart-bar",
+    ),
+    "next_workout": ("Next workout", "Neste økt", "mdi:skip-next"),
+    "exercise_distance_this_week": (
+        "Distance this week",
+        "Distanse denne uken",
+        "mdi:map-marker-distance",
+    ),
     "routines": ("Routines", "Rutiner", "mdi:clipboard-list"),
     "routine_folders": ("Routine folders", "Rutinemapper", "mdi:folder-multiple"),
     "body_measurement_date": (
@@ -780,9 +797,16 @@ def build_strings(lang: str) -> dict:
         "config": CONFIG[lang],
         "options": OPTIONS[lang],
         "entity": {
+            "binary_sensor": {
+                key: {"name": (en, nb)[idx]}
+                for key, (en, nb, _i) in BINARY_SENSORS.items()
+            },
+            "calendar": {
+                key: {"name": (en, nb)[idx]} for key, (en, nb, _i) in CALENDARS.items()
+            },
             "sensor": {
                 key: {"name": (en, nb)[idx]} for key, (en, nb, _i) in SENSORS.items()
-            }
+            },
         },
         "exceptions": {k: {"message": v} for k, v in EXCEPTIONS[lang].items()},
         "selector": {
@@ -793,6 +817,17 @@ def build_strings(lang: str) -> dict:
     }
 
 
+BINARY_SENSORS = {
+    "worked_out_today": ("Worked out today", "Trent i dag", "mdi:check-circle"),
+    "worked_out_this_week": (
+        "Worked out this week",
+        "Trent denne uken",
+        "mdi:calendar-check",
+    ),
+}
+CALENDARS = {"workouts": ("Workouts", "Treningsøkter", "mdi:calendar")}
+
+
 def build_icons() -> dict:
     return {
         "entity": {
@@ -801,7 +836,14 @@ def build_icons() -> dict:
                 for key, (_en, _nb, icon) in SENSORS.items()
                 if key not in ("last_workout",)
             }
-            | {"last_workout": {"default": "mdi:dumbbell"}}
+            | {"last_workout": {"default": "mdi:dumbbell"}},
+            "binary_sensor": {
+                key: {"default": icon}
+                for key, (_en, _nb, icon) in BINARY_SENSORS.items()
+            },
+            "calendar": {
+                key: {"default": icon} for key, (_en, _nb, icon) in CALENDARS.items()
+            },
         },
         "services": {
             name: {"service": icon} for name, (_f, icon, _e, _n) in SERVICES.items()
