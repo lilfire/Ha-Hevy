@@ -17,7 +17,9 @@ from .coordinator import (
     routine_device_id,
     store_for,
 )
+from .frontend import async_register_card
 from .services import async_setup_services
+from .websocket import async_remove_session, async_setup_websocket
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.CALENDAR, Platform.SENSOR]
 
@@ -27,6 +29,8 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Hevy services."""
     async_setup_services(hass)
+    async_setup_websocket(hass)
+    await async_register_card(hass)
     return True
 
 
@@ -55,6 +59,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: HevyConfigEntry) -> boo
 async def async_remove_entry(hass: HomeAssistant, entry: HevyConfigEntry) -> None:
     """Delete the cached workout history."""
     await store_for(hass, entry.entry_id).async_remove()
+    await async_remove_session(hass, entry.entry_id)
 
 
 async def async_remove_config_entry_device(

@@ -35,6 +35,19 @@ Polling interval (default 15 min, 5–1440) is set under *Configure*.
 | Last body measurement | Date of the newest body measurement |
 | Weight, Body fat | From the newest body measurement |
 | Lean mass + 14 circumferences | Disabled by default; enable in the entity registry |
+| Current streak | Training days in a row, one rest day allowed between sessions; attributes: longest streak, start |
+| Muscle groups last workout | Primary groups of the latest workout; attributes: secondary groups, `days_since_last` per group, `muscles_due` (trained before, not in the last 4 days) |
+| Volume last 7 days | Working-set volume; attributes: volume per muscle group and per-exercise breakdown |
+| Next workout | Next routine in the rotation (see below) |
+
+Binary sensors: **Worked out today**, **Worked out this week** (week starts
+Monday). Calendar: **Workouts** shows every workout in the cached history,
+with exercises, sets, best set, volume and muscle groups in the description.
+
+**Rotation:** Hevy's API has no routine order, so the next workout is the
+routine in the same folder as your last routine that you did least recently
+(routines never done come first). With routines A, B, C done in that order,
+the next one is A.
 
 Hevy does not state the unit of `abdomen`, `waist`, `hips`, `*_thigh` and
 `*_calf`; they are assumed to be cm, like the other circumference fields.
@@ -89,6 +102,42 @@ actions:
       message: "Nice! {{ trigger.event.data.title }} – {{ trigger.event.data.volume_kg }} kg"
 ```
 
+## Live workout card
+
+The integration ships a dashboard card for logging a workout as you train,
+for example on a gym tablet. It is loaded automatically; no resource needs to
+be added. Add a card with:
+
+```yaml
+type: custom:hevy-workout-card
+```
+
+- Start from a routine (the next routine in the rotation is highlighted) or an
+  empty workout; add exercises by searching the catalog.
+- Edit weight/reps (or distance/duration for cardio), set type and RPE, and
+  tick each set when done. **Finish** asks for confirmation and sends only
+  ticked sets to Hevy.
+- The session is saved in Home Assistant while you edit, so a page refresh,
+  another device or a restart continues where you left off. One active
+  session per Hevy account.
+- If the result of sending is uncertain (timeout), the card asks you to check
+  Hevy before retrying, since a retry could create a duplicate.
+- With several Hevy accounts, **Who is working out?** switches account.
+
+| Option | Default | Description |
+|---|---|---|
+| `config_entry_id` | first account | Account the card opens on |
+| `title` | Workout | Card heading |
+| `routine_ids` | all | Only show these routines, in this order |
+| `exercise_ids` | none | Favorite exercises shown before searching |
+| `prefill_previous_weight` / `prefill_previous_reps` | false | Fill in values from the last time you did each exercise (matched by set position within the same set type) |
+| `default_private_workout` | false | New sessions start as private |
+| `collapse_completed_sets` | false | Collapse ticked sets to a summary |
+| `show_account_stats` | false | Show total workouts, last 7 days and streak |
+| `show_rpe` / `show_set_type` | true | Show the RPE and set type selectors |
+
+Use `hevy.get_routines` and `hevy.get_exercise_catalog` to find ids.
+
 ## Services (full API)
 
 Every service takes an optional `config_entry_id`, which is only needed when
@@ -123,6 +172,18 @@ trigger a sensor refresh.
 
 Times without a time zone are interpreted in Home Assistant's time zone and
 sent to Hevy as UTC.
+
+Additional services built on the local cache:
+
+| Service | Description |
+|---|---|
+| `hevy.log_workout` | Log a completed workout using exercise **names** (matched exactly, then case-insensitively; on no match nothing is sent and the error lists close names). `end_time` defaults to now; give `start_time` or `duration_minutes`. Returns `workout_id` and `title`. |
+| `hevy.get_workout_history` | `days` (default 30): summary (workouts, training days, total/average volume, average duration) and enriched workouts. No API calls. |
+| `hevy.get_exercise_catalog` | All exercise templates sorted by title: id, title, type, muscle group. |
+
+> Hevy's API cannot delete workouts. A workout logged by mistake must be
+> removed in the Hevy app, so put a confirmation step in front of buttons
+> that call `log_workout`.
 
 ### Examples
 
@@ -179,4 +240,7 @@ pip install -r requirements_test.txt
 pytest
 ruff check . && ruff format --check .
 python script/gen_translations.py   # regenerates services.yaml, strings.json, icons.json, translations/
+
+# Card smoke test in a browser (needs the playwright npm package)
+CHROMIUM_PATH=/path/to/chrome node tests/frontend/card_smoke.mjs
 ```
