@@ -314,3 +314,50 @@ async def test_history_restored_from_store(
     data = config_entry.runtime_data.data
     assert [w["id"] for w in data.workouts] == ["cached"]
     assert data.exercises["D04AC939"].title == "Bench"
+
+
+async def test_multi_page_template_catalog(
+    hass: HomeAssistant, mock_api: AiohttpClientMocker, config_entry: MockConfigEntry
+) -> None:
+    """The exercise catalog is paged through (regression: TypeError on page 1)."""
+    mock_api.clear_requests()
+    mock_api.get(
+        f"{BASE}/exercise_templates?page=2",
+        json={
+            "page": 2,
+            "page_count": 2,
+            "exercise_templates": [
+                {"id": "RUN1", "title": "Running", "type": "distance_duration"}
+            ],
+        },
+    )
+    mock_api.get(
+        f"{BASE}/exercise_templates",
+        json={
+            "page": 1,
+            "page_count": 2,
+            "exercise_templates": [
+                {"id": "D04AC939", "title": "Bench Press (Barbell)"}
+            ],
+        },
+    )
+    for path, payload in (
+        ("user/info", {"data": {"id": "x", "name": "John"}}),
+        ("workouts/count", {"workout_count": 1}),
+        (
+            "workouts",
+            {
+                "page": 1,
+                "page_count": 1,
+                "workouts": [make_workout("w1", timedelta(hours=1))],
+            },
+        ),
+        ("routines", {"page": 1, "page_count": 1, "routines": []}),
+        ("routine_folders", {"page": 1, "page_count": 1, "routine_folders": []}),
+        ("body_measurements", {"page": 1, "page_count": 1, "body_measurements": []}),
+    ):
+        mock_api.get(f"{BASE}/{path}", json=payload)
+    config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(config_entry.entry_id)
+    await hass.async_block_till_done()
+    assert set(config_entry.runtime_data.templates) == {"D04AC939", "RUN1"}

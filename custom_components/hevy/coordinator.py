@@ -199,7 +199,6 @@ class HevyCoordinator(DataUpdateCoordinator[HevyData]):
             self.client.get_exercise_templates,
             "exercise_templates",
             MAX_TEMPLATE_PAGE_SIZE,
-            MUSCLE_DUE_DAYS,
             MAX_LIST_PAGES,
         )
         self._templates = {

@@ -278,6 +278,7 @@ class HevyClient:
         key: str,
         page_size: int,
         max_pages: int,
+        *,
         stop: Callable[[list[JSON]], bool] | None = None,
     ) -> list[JSON]:
         """Collect ``key`` items across pages.
